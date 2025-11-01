@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1761991614445" clover="3.2.0">
+  <project timestamp="1761991614446" name="All files">
+    <metrics statements="23" coveredstatements="23" conditionals="5" coveredconditionals="3" methods="8" coveredmethods="8" elements="36" coveredelements="34" complexity="0" loc="23" ncloc="23" packages="5" files="9" classes="9"/>
+    <package name="Components.Button">
+      <metrics statements="5" coveredstatements="5" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+      <file name="Button.component.config.tsx" path="C:\Users\Fiki\Documents\technical_test\my_republic\app\Components\Button\Button.component.config.tsx">
+        <metrics statements="1" coveredstatements="1" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="1" count="1" type="stmt"/>
+      </file>
+      <file name="Button.component.tsx" path="C:\Users\Fiki\Documents\technical_test\my_republic\app\Components\Button\Button.component.tsx">
+        <metrics statements="4" coveredstatements="4" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="1"/>
+        <line num="15" count="1" type="stmt"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="18" count="4" type="stmt"/>
+        <line num="25" count="1" type="stmt"/>
+      </file>
+    </package>
+    <package name="Components.GeneralText">
+      <metrics statements="5" coveredstatements="5" conditionals="1" coveredconditionals="1" methods="1" coveredmethods="1"/>
+      <file name="GeneralText.component.config.tsx" path="C:\Users\Fiki\Documents\technical_test\my_republic\app\Components\GeneralText\GeneralText.component.config.tsx">
+        <metrics statements="1" coveredstatements="1" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="1" count="1" type="stmt"/>
+      </file>
+      <file name="GeneralText.component.tsx" path="C:\Users\Fiki\Documents\technical_test\my_republic\app\Components\GeneralText\GeneralText.component.tsx">
+        <metrics statements="4" coveredstatements="4" conditionals="1" coveredconditionals="1" methods="1" coveredmethods="1"/>
+        <line num="14" count="1" type="stmt"/>
+        <line num="21" count="1" type="cond" truecount="1" falsecount="0"/>
+        <line num="22" count="2" type="stmt"/>
+        <line num="27" count="1" type="stmt"/>
+      </file>
+    </package>
+    <package name="Constant">
+      <metrics statements="1" coveredstatements="1" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="Constant.tsx" path="C:\Users\Fiki\Documents\technical_test\my_republic\app\Constant\Constant.tsx">
+        <metrics statements="1" coveredstatements="1" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="1" count="2" type="stmt"/>
+      </file>
+      <file name="index.tsx" path="C:\Users\Fiki\Documents\technical_test\my_republic\app\Constant\index.tsx">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="Utils">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="index.tsx" path="C:\Users\Fiki\Documents\technical_test\my_republic\app\Utils\index.tsx">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="Utils.Size">
+      <metrics statements="12" coveredstatements="12" conditionals="4" coveredconditionals="2" methods="6" coveredmethods="6"/>
+      <file name="index.tsx" path="C:\Users\Fiki\Documents\technical_test\my_republic\app\Utils\Size\index.tsx">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="size.utils.tsx" path="C:\Users\Fiki\Documents\technical_test\my_republic\app\Utils\Size\size.utils.tsx">
+        <metrics statements="12" coveredstatements="12" conditionals="4" coveredconditionals="2" methods="6" coveredmethods="6"/>
+        <line num="3" count="2" type="stmt"/>
+        <line num="10" count="2" type="stmt"/>
+        <line num="11" count="3" type="stmt"/>
+        <line num="13" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="15" count="3" type="stmt"/>
+        <line num="18" count="3" type="stmt"/>
+        <line num="20" count="2" type="stmt"/>
+        <line num="27" count="2" type="stmt"/>
+        <line num="38" count="2" type="stmt"/>
+        <line num="46" count="2" type="stmt"/>
+        <line num="54" count="2" type="stmt"/>
+        <line num="62" count="3" type="cond" truecount="1" falsecount="1"/>
+      </file>
+    </package>
+  </project>
+</coverage>

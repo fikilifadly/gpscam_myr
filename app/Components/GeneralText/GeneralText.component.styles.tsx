@@ -1,29 +1,37 @@
-import Constant from "@/app/Constant";
+import Constant from "@/Constant";
 import memoize from "fast-memoize";
-import { TextStyle } from "react-native";
 import { Size } from "../../Utils";
 
 const { scaleFont } = Size;
 
 const {
 	GENERAL_TEXT: {
-		VARIANTS: { SECTION_TITLE, SECTION_SUBTITLE, SECTION_DESCRIPTION },
+		VARIANTS: { SECTION_TITLE, SECTION_SUBTITLE, SECTION_DESCRIPTION, BUTTON },
+		ALIGN,
 	},
-	COLORS: { GRAY },
+	BUTTON: {
+		TYPES: { PRIMARY },
+	},
+	COLORS,
 } = Constant;
 
 export default {
-	[SECTION_TITLE]: memoize((textAlign: string) => ({
+	[SECTION_TITLE]: memoize((argsAlign = ALIGN.LEFT) => ({
 		fontSize: scaleFont(16),
-		textAlign: textAlign as TextStyle["textAlign"],
+		textAlign: argsAlign,
 	})),
-	[SECTION_SUBTITLE]: memoize((textAlign: string) => ({
+	[SECTION_SUBTITLE]: memoize((argsAlign = ALIGN.LEFT) => ({
 		fontSize: scaleFont(15),
-		textAlign: textAlign as TextStyle["textAlign"],
+		textAlign: argsAlign,
 	})),
-	[SECTION_DESCRIPTION]: memoize((textAlign: string) => ({
+	[SECTION_DESCRIPTION]: memoize((argsAlign = ALIGN.LEFT) => ({
 		fontSize: scaleFont(15),
-		color: GRAY,
-		textAlign: textAlign as TextStyle["textAlign"],
+		color: COLORS.GRAY,
+		textAlign: argsAlign,
+	})),
+	[BUTTON]: memoize((argsAlign, type: string) => ({
+		fontSize: scaleFont(13),
+		color: type === PRIMARY ? COLORS.WHITE : COLORS.BLACK,
+		textAlign: ALIGN.CENTER,
 	})),
 };

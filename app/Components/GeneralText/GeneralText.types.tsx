@@ -1,9 +1,8 @@
-import { TextStyle } from "react-native";
+export type TextAlign = "left" | "center" | "right" | "justify" | "auto" | (string & {});
 
 export type Props = {
 	text: string;
-	textAlign: string;
+	textAlign?: TextAlign;
 	variant: string;
+	type?: string;
 };
-
-export type TextAlign = TextStyle["textAlign"];

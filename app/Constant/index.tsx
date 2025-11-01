@@ -1,1 +1,2 @@
-export { default } from "./Constant";
+import Constant from "./Constant";
+export default Constant;
