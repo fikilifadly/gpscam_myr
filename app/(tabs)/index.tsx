@@ -1,4 +1,4 @@
-import { GeneralText } from "@/components";
+import GeneralText from "@/components/GeneralText/GeneralText.component";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Constant from "@/constants";

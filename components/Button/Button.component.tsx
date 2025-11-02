@@ -1,6 +1,6 @@
 import React from "react";
 
-import { GeneralText } from "@/components";
+import GeneralText from "@/components/GeneralText/GeneralText.component";
 import Constants from "@/constants";
 import { TouchableOpacity, View } from "react-native";
 import config from "./Button.component.config";
