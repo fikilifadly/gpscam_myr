@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import Constant from "@/Constant";
+import Constants from "@/constants";
 import { Text, View } from "react-native";
 import config from "./GeneralText.component.config";
 import styles from "./GeneralText.component.styles";
@@ -11,7 +11,7 @@ const {
 	BUTTON: {
 		TYPES: { PRIMARY },
 	},
-} = Constant;
+} = Constants;
 
 /**
  * GeneralText

@@ -12,7 +12,7 @@ const {
 export default function HomeScreen() {
 	return (
 		<SafeAreaView edges={["top", "left", "right"]} style={{ flex: 1 }}>
-			<GeneralText text="welcome" variant={SECTION_TITLE} />
+			<GeneralText text="List data" variant={SECTION_TITLE} />
 		</SafeAreaView>
 	);
 }

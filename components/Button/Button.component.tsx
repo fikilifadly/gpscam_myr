@@ -1,8 +1,8 @@
 import React from "react";
 
-import Constant from "@/Constant";
+import { GeneralText } from "@/components";
+import Constants from "@/constants";
 import { TouchableOpacity, View } from "react-native";
-import { GeneralText } from "../../Components";
 import config from "./Button.component.config";
 import styles from "./Button.component.styles";
 import type { Props } from "./Button.types";
@@ -12,7 +12,7 @@ const {
 		VARIANTS: { BUTTON },
 		ALIGN,
 	},
-} = Constant;
+} = Constants;
 
 const Button = (props: Props) => (
 	<View style={styles.containerDisabled((props.isDisabled = false))}>

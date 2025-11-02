@@ -1,6 +1,6 @@
-import Constant from "@/Constant";
+import Constants from "@/constants";
 import memoize from "fast-memoize";
-import { Size } from "../../Utils";
+import { Size } from "../../utils";
 
 const { scaleFont } = Size;
 
@@ -13,7 +13,7 @@ const {
 		TYPES: { PRIMARY },
 	},
 	COLORS,
-} = Constant;
+} = Constants;
 
 export default {
 	[SECTION_TITLE]: memoize((argsAlign = ALIGN.LEFT) => ({

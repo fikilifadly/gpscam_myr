@@ -1,14 +1,16 @@
-import Constant from "@/Constant";
 import memoize from "fast-memoize";
-import { Size } from "../../Utils";
+
+import { Size } from "../../utils";
 import type { ButtonTypes } from "./Button.types";
+
+import Constants from "@/constants";
 
 const { scaleSize } = Size;
 
 const {
 	BUTTON: { TYPES },
 	COLORS,
-} = Constant;
+} = Constants;
 
 /**
  * getTypes

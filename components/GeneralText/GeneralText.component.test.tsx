@@ -1,4 +1,4 @@
-import Constant from "@/Constant";
+import Constants from "@/constants";
 import { render } from "@testing-library/react-native";
 import React from "react";
 import GeneralText from "./GeneralText.component";
@@ -10,7 +10,7 @@ const {
 	BUTTON: {
 		TYPES: { PRIMARY },
 	},
-} = Constant;
+} = Constants;
 
 describe("GeneralText Component", () => {
 	const props = {

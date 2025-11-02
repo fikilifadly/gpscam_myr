@@ -27,6 +27,9 @@ const Constant = {
 		SECONDARY: "#8c8c8c",
 		GRAY: "gray",
 	},
+	PERMISSION: {
+		GRANTED: "granted",
+	},
 };
 
 export default Constant;
