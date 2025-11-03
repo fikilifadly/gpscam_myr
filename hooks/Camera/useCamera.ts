@@ -1,69 +1,70 @@
-import { Camera } from "expo-camera";
-import * as ImageManipulator from "expo-image-manipulator";
-import { useCallback, useRef, useState } from "react";
+import { useState, useRef, useCallback } from 'react';
+import { Camera, CameraType, CameraPictureOptions } from 'expo-camera';
+import { CameraPhoto, ProcessedImage } from '@/types/index.types';
+import { addExifData, addWatermark } from '@/utils/imageProcessor/imageProcessor';
+import APP_CONSTANTS from '@/constants';
 
-import type { CameraPhoto, CompassData, LocationData, ProcessedImage, WeatherData } from '../../types/index.types';
-import type { UseCamera } from "./Camera.types";
-
-import Constant from "@/constants";
-
-const {
-  PERMISSION: { GRANTED },
-} = Constant;
+interface UseCameraReturn {
+  cameraRef: React.RefObject<Camera>;
+  hasPermission: boolean | null;
+  previewUri: string | null;
+  isTakingPicture: boolean;
+  cameraType: CameraType;
+  requestPermission: () => Promise<boolean>;
+  takePicture: () => Promise<CameraPhoto | null>;
+  retakePicture: () => void;
+  savePicture: (photo: CameraPhoto, metadata: Omit<ProcessedImage, 'uri'>) => Promise<ProcessedImage | null>;
+  switchCamera: () => void;
+}
 
 /**
- * Use Camera
- *
- * @returns {UseCamera} camera hook
+ * Custom hook for camera functionality with GPS metadata
+ * @returns Camera methods and state
  */
-const useCamera = (): UseCamera => {
-  const cameraRef = useRef<typeof Camera>(null);
-  const [hasPermission, setHasPermission] = useState<boolean>(false);
+export const useCamera = (): UseCameraReturn => {
+  const cameraRef = useRef<Camera>(null);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [isTakingPicture, setIsTakingPicture] = useState<boolean>(false);
+  const [cameraType, setCameraType] = useState<CameraType>(CameraType.back);
 
   /**
    * Request camera permissions
-   *
-   * @returns {Promise<boolean>} Permission granted status
    */
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
       const { status } = await Camera.requestCameraPermissionsAsync();
-
-      const granted = status === GRANTED;
-
+      const granted = status === 'granted';
       setHasPermission(granted);
       return granted;
     } catch (error) {
-      console.error("Error requesting camera permission:", error);
+      console.error('Error requesting camera permission:', error);
       return false;
     }
   }, []);
 
   /**
    * Capture picture from camera
-   * 
-   * @returns {Promise<string | null>} URI of captured image
    */
-  const takePicture = useCallback(async (): Promise<string | null> => {
+  const takePicture = useCallback(async (): Promise<CameraPhoto | null> => {
     if (!cameraRef.current) {
-      console.warn("Camera ref is not available");
+      console.warn('Camera ref is not available');
       return null;
     }
 
     setIsTakingPicture(true);
     try {
       const photo: CameraPhoto = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
+        quality: APP_CONSTANTS.CAMERA.QUALITY,
         exif: true,
+        base64: false,
         skipProcessing: false,
-      });
+      } as CameraPictureOptions);
 
       setPreviewUri(photo.uri);
-      return photo.uri;
+      return photo;
     } catch (error) {
-      console.error("Error taking picture:", error);
+      console.error('Error taking picture:', error);
       return null;
     } finally {
       setIsTakingPicture(false);
@@ -72,8 +73,6 @@ const useCamera = (): UseCamera => {
 
   /**
    * Reset preview and allow retaking picture
-   * 
-   * @returns {void} setter null
    */
   const retakePicture = useCallback((): void => {
     setPreviewUri(null);
@@ -81,55 +80,50 @@ const useCamera = (): UseCamera => {
 
   /**
    * Save picture with watermark and metadata
-   * 
-   * @param {string} uri - uri
-   * @param {Object} metadata - metadata
-   * @returns {Promise<ProcessedImage | null>} processImage | null
    */
-  const savePicture = useCallback(
-    async (
-      uri: string,
-      metadata: {
-        location: LocationData;
-        weather: WeatherData;
-        compass: CompassData;
-        hasMockLocation: boolean;
-      }
-    ): Promise<ProcessedImage | null> => {
-      try {
-        const processedImage = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 1080 } }], {
-          compress: 0.8,
-          format: ImageManipulator.SaveFormat.JPEG,
-          base64: false,
-        });
+  const savePicture = useCallback(async (
+    photo: CameraPhoto,
+    metadata: Omit<ProcessedImage, 'uri'>
+  ): Promise<ProcessedImage | null> => {
+    try {
+      // Step 1: Add watermark to image
+      const watermarkedImage = await addWatermark(photo.uri);
+      
+      // Step 2: Add EXIF data with GPS and custom metadata
+      const finalImageUri = await addExifData(watermarkedImage.uri, metadata);
+      
+      const processedImage: ProcessedImage = {
+        uri: finalImageUri,
+        ...metadata,
+      };
 
-        const imageWithExif = await addExifData(processedImage.uri, metadata);
+      return processedImage;
+    } catch (error) {
+      console.error('Error saving picture:', error);
+      return null;
+    }
+  }, []);
 
-        return {
-          ...processedImage,
-          location: metadata.location,
-          timestamp: new Date().toISOString(),
-          weather: metadata.weather,
-          compass: metadata.compass,
-          hasMockLocation: metadata.hasMockLocation,
-        };
-      } catch (error) {
-        console.error("Error saving picture:", error);
-        return null;
-      }
-    },
-    []
-  );
+  /**
+   * Switch between front and back camera
+   */
+  const switchCamera = useCallback((): void => {
+    setCameraType(current => 
+      current === CameraType.back ? CameraType.front : CameraType.back
+    );
+  }, []);
 
   return {
     cameraRef,
     hasPermission,
     previewUri,
     isTakingPicture,
+    cameraType,
     requestPermission,
     takePicture,
     retakePicture,
     savePicture,
+    switchCamera,
   };
 };
 

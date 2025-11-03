@@ -20,4 +20,4 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
-export default app;
+export default { app, db, auth, storage };

@@ -1,47 +1,44 @@
+import { useState, useEffect, useCallback } from 'react';
 import * as Location from 'expo-location';
-import { useCallback, useEffect, useState } from 'react';
-import { CompassData, LocationData } from '../../types/index.types';
-import { checkMockLocation } from '../../utils/location';
+import { LocationData, CompassData, MockDetectionResult } from '@/types/index.types';
+import { checkMockLocation } from '@/utils/location/location';
+import APP_CONSTANTS from '@/constants';
 
-import Constant from "@/constants";
-
-const {
-  PERMISSION: { GRANTED },
-} = Constant;
-
-/**
- * Location hook return type
- */
 interface UseLocationReturn {
   location: LocationData | null;
   compass: CompassData | null;
-  hasMockLocation: boolean;
+  mockDetection: MockDetectionResult;
   error: string | null;
-  isLocationLoading: boolean;
+  isLoading: boolean;
   requestPermission: () => Promise<boolean>;
   getCurrentLocation: () => Promise<LocationData | null>;
+  startWatching: () => void;
+  stopWatching: () => void;
 }
 
 /**
- * Use Location
- * 
- * @returns {UseLocationReturn} Location hook methods and state
+ * Custom hook for location, compass, and mock location detection
+ * @returns Location methods and state
  */
-export const useLocation = (): UseLocationReturn => {
+const useLocation = (): UseLocationReturn => {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [compass, setCompass] = useState<CompassData | null>(null);
-  const [hasMockLocation, setHasMockLocation] = useState<boolean>(false);
+  const [mockDetection, setMockDetection] = useState<MockDetectionResult>({
+    isMocked: false,
+    mockApps: [],
+    provider: null,
+  });
   const [error, setError] = useState<string | null>(null);
-  const [isLocationLoading, setIsLocationLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [watchSubscription, setWatchSubscription] = useState<Location.LocationSubscription | null>(null);
 
   /**
    * Request location permissions
-   * @returns {Promise<boolean>} Permission granted status
    */
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      const granted = status === GRANTED;
+      const granted = status === 'granted';
       
       if (!granted) {
         setError('Location permission denied');
@@ -57,15 +54,14 @@ export const useLocation = (): UseLocationReturn => {
 
   /**
    * Get current location with high accuracy
-   * @returns {Promise<LocationData | null>} Current location data
    */
   const getCurrentLocation = useCallback(async (): Promise<LocationData | null> => {
-    setIsLocationLoading(true);
+    setIsLoading(true);
     setError(null);
 
     try {
       const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Highest,
+        accuracy: Location.Accuracy.BestForNavigation,
         mayShowUserSettingsDialog: true,
       });
 
@@ -77,12 +73,14 @@ export const useLocation = (): UseLocationReturn => {
         altitudeAccuracy: currentLocation.coords.altitudeAccuracy,
         heading: currentLocation.coords.heading,
         speed: currentLocation.coords.speed,
+        timestamp: currentLocation.timestamp,
       };
 
       setLocation(locationData);
 
-      const mockLocationDetected = await checkMockLocation();
-      setHasMockLocation(mockLocationDetected);
+      // Check for mock location
+      const mockResult = await checkMockLocation();
+      setMockDetection(mockResult);
 
       return locationData;
     } catch (err) {
@@ -90,38 +88,95 @@ export const useLocation = (): UseLocationReturn => {
       setError(errorMessage);
       return null;
     } finally {
-      setIsLocationLoading(false);
+      setIsLoading(false);
     }
   }, []);
 
+  /**
+   * Start watching location updates
+   */
+  const startWatching = useCallback((): void => {
+    if (watchSubscription) return;
+
+    const watchLocation = async (): Promise<void> => {
+      try {
+        const sub = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.BestForNavigation,
+            timeInterval: APP_CONSTANTS.LOCATION.UPDATE_INTERVAL,
+            distanceInterval: APP_CONSTANTS.LOCATION.DISTANCE_INTERVAL,
+          },
+          (newLocation) => {
+            const locationData: LocationData = {
+              latitude: newLocation.coords.latitude,
+              longitude: newLocation.coords.longitude,
+              altitude: newLocation.coords.altitude,
+              accuracy: newLocation.coords.accuracy,
+              altitudeAccuracy: newLocation.coords.altitudeAccuracy,
+              heading: newLocation.coords.heading,
+              speed: newLocation.coords.speed,
+              timestamp: newLocation.timestamp,
+            };
+            setLocation(locationData);
+          }
+        );
+        setWatchSubscription(sub);
+      } catch (err) {
+        console.error('Error watching location:', err);
+      }
+    };
+
+    watchLocation();
+  }, [watchSubscription]);
+
+  /**
+   * Stop watching location updates
+   */
+  const stopWatching = useCallback((): void => {
+    if (watchSubscription) {
+      watchSubscription.remove();
+      setWatchSubscription(null);
+    }
+  }, [watchSubscription]);
+
+  // Watch compass
   useEffect(() => {
-    let subscription: Location.LocationSubscription | null = null;
+    let compassSubscription: Location.LocationSubscription | null = null;
 
     const watchCompass = async (): Promise<void> => {
-      subscription = await Location.watchHeadingAsync((heading: Location.LocationHeadingObject) => {
-        setCompass({
-          magneticHeading: heading.magHeading,
-          trueHeading: heading.trueHeading,
+      try {
+        compassSubscription = await Location.watchHeadingAsync((heading) => {
+          setCompass({
+            magneticHeading: heading.magHeading,
+            trueHeading: heading.trueHeading,
+          });
         });
-      });
+      } catch (err) {
+        console.error('Error watching compass:', err);
+      }
     };
 
     watchCompass();
 
     return (): void => {
-      if (subscription) {
-        subscription.remove();
+      if (compassSubscription) {
+        compassSubscription.remove();
       }
+      stopWatching();
     };
-  }, []);
+  }, [stopWatching]);
 
   return {
     location,
     compass,
-    hasMockLocation,
+    mockDetection,
     error,
-    isLocationLoading,
+    isLoading,
     requestPermission,
     getCurrentLocation,
+    startWatching,
+    stopWatching,
   };
 };
+
+export default useLocation;
