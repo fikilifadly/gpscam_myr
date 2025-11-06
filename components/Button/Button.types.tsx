@@ -1,4 +1,4 @@
-import type { VoidFunction } from "../../types/index.types";
+import type { VoidFunction } from "../../types/index.";
 
 export type ButtonTypes = {
 	backgroundColor: string;

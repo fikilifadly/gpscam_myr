@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import * as Application from 'expo-application';
-import { MockDetectionResult } from '@/types/index.types';
+import { MockDetectionResult } from '@/types/index.';
 import Constant from '@/constants';
 
 /**

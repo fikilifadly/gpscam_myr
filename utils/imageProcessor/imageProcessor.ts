@@ -1,5 +1,5 @@
 import * as ImageManipulator from 'expo-image-manipulator';
-import { ProcessedImage } from '@/types/index.types';
+import { ProcessedImage } from '@/types/index.';
 import Constant from '@/constants';
 
 /**

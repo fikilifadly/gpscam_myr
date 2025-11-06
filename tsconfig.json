@@ -1,10 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "lib": [
-      "es2020",
-      "dom"
-    ],
+    "lib": ["es2020", "dom"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -18,27 +15,12 @@
     "allowSyntheticDefaultImports": true,
     "noEmit": true,
     "isolatedModules": true,
-    "types": [
-      "node",
-      "react",
-      "react-native"
-    ],
+    "types": ["node", "react", "react-native"],
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-    },
+      "@/*": ["./*"]
+    }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build"
-  ],
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "exclude": ["node_modules", "dist", "build"],
   "extends": "expo/tsconfig.base"
 }

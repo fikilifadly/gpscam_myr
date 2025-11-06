@@ -1,4 +1,4 @@
-import { WeatherData } from '@/types/index.types';
+import { WeatherData } from '@/types/index.';
 import Constant from '@/constants';
 
 /**
