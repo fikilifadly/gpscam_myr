@@ -1,22 +1,75 @@
 import React, { useEffect } from 'react';
-import useFirebase from '@/hooks/firebase/useFirebase';
-import { PhotoData, AsyncVoidFunction } from '@/types/index.';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import usePhotoGallery from './usePhotoGallery';
+import PhotoItem from '../PhotoItem/PhotoItem.component';
+import styles from './PhotoGallery.component.style';
 
 /**
- * Photo gallery component displaying photos from Firebase
+ * Empty state component
+ * 
+ * @returns {React.ReactElement} Empty state component
+ */
+const EmptyState: React.FC = () => (
+  <View style={styles.emptyContainer}>
+    <Text style={styles.emptyText}>No photos yet</Text>
+    <Text style={styles.emptySubtext}>
+      Capture your first GPS-tagged photo using the camera
+    </Text>
+  </View>
+);
+
+/**
+ * Loading state component
+ * 
+ * @returns {React.ReactElement} Loading state component
+ */
+const LoadingState: React.FC = () => (
+  <View style={styles.centerContainer}>
+    <Text style={styles.loadingText}>Loading photos...</Text>
+  </View>
+);
+
+/**
+ * Error state component
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.error - Error message
+ * @param {Function} props.onRetry - Retry function
+ * @param {Function} props.onDismiss - Dismiss function
+ * @returns {React.ReactElement} Error state component
+ */
+const ErrorState: React.FC<{
+  error: string;
+  onRetry: () => void;
+  // onDismiss: () => void;
+}> = ({ error, onRetry }) => (
+  <View style={styles.centerContainer}>
+    <Text style={styles.errorText}>Error: {error}</Text>
+    <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+      <Text style={styles.retryButtonText}>Retry</Text>
+    </TouchableOpacity>
+    <TouchableOpacity style={styles.clearErrorButton} 
+    // onPress={onDismiss}
+    >
+      <Text style={styles.clearErrorButtonText}>Dismiss</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+/**
+ * Photo gallery component for displaying GPS-tagged photos
  * 
  * @returns {React.FC} Photo gallery component
  */
 const PhotoGallery: React.FC = () => {
-  const { 
-    photos, 
-    loading, 
-    error, 
-    loadPhotos, 
-    uploadPhoto, 
-    deletePhoto,
-    setError 
-  } = useFirebase();
+  const {
+    photos,
+    loading,
+    error,
+    loadPhotos,
+    handleDeletePhoto,
+    handleRefresh,
+  } = usePhotoGallery();
 
   /**
    * Load photos on component mount
@@ -25,85 +78,46 @@ const PhotoGallery: React.FC = () => {
     loadPhotos();
   }, [loadPhotos]);
 
-  /**
-   * Handle photo deletion
-   * 
-   * @param {string} photoId - ID of photo to delete
-   */
-  const handleDeletePhoto = (photoId: string): void => {
-    const deleteFn: AsyncVoidFunction = deletePhoto(photoId);
-    
-    deleteFn().then(() => {
-      // Reload photos after successful deletion
-      loadPhotos();
-    }).catch((err) => {
-      console.error('Failed to delete photo:', err);
-    });
-  };
+  if (loading && photos.length === 0) {
+    return <LoadingState />;
+  }
 
-  /**
-   * Handle photo upload
-   * 
-   * @param {Omit<PhotoData, 'id' | 'createdAt'>} photoData - Photo data to upload
-   */
-  const handleUploadPhoto = async (
-    photoData: Omit<PhotoData, 'id' | 'createdAt'>
-  ): Promise<void> => {
-    try {
-      const photoId = await uploadPhoto(photoData);
-      console.log('Photo uploaded with ID:', photoId);
-      await loadPhotos(); // Refresh list
-    } catch (err) {
-      console.error('Failed to upload photo:', err);
-    }
-  };
-
-  /**
-   * Clear error
-   */
-  const handleClearError = (): void => {
-    setError(null);
-  };
-
-  if (loading) return <div>Loading photos...</div>;
-  
-  if (error) return (
-    <div>
-      <div>Error: {error}</div>
-      <button onClick={handleClearError}>Dismiss</button>
-      <button onClick={loadPhotos}>Retry</button>
-    </div>
-  );
+  if (error) {
+    return (
+      <ErrorState 
+        error={error} 
+        onRetry={loadPhotos}
+        // onDismiss={}
+      />
+    );
+  }
 
   return (
-    <div>
-      <h2>Photo Gallery ({photos.length} photos)</h2>
-      <button onClick={loadPhotos} disabled={loading}>
-        Refresh Photos
-      </button>
-      
-      <div>
-        {photos.map(photo => (
-          <div key={photo.id} style={{ marginBottom: '20px' }}>
-            <img 
-              src={photo.imageBase64} 
-              alt="Captured" 
-              style={{ width: '200px', height: '150px' }}
-            />
-            <div>
-              <p>Location: {photo.location.latitude}, {photo.location.longitude}</p>
-              <p>Mock Location: {photo.isMockLocation ? 'Yes' : 'No'}</p>
-              <button 
-                onClick={() => handleDeletePhoto(photo.id!)}
-                disabled={loading}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Photo Gallery</Text>
+        <Text style={styles.subtitle}>
+          {photos.length} photo{photos.length !== 1 ? 's' : ''}
+        </Text>
+      </View>
+
+      <FlatList
+        data={photos}
+        renderItem={({ item }) => (
+          <PhotoItem 
+            photo={item} 
+            onDelete={handleDeletePhoto}
+            loading={loading}
+          />
+        )}
+        keyExtractor={(item) => item.id || Math.random().toString()}
+        refreshing={loading}
+        onRefresh={handleRefresh}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={<EmptyState />}
+      />
+    </View>
   );
 };
 

@@ -15,7 +15,7 @@
     "allowSyntheticDefaultImports": true,
     "noEmit": true,
     "isolatedModules": true,
-    "types": ["node", "react", "react-native"],
+    "types": ["node", "jest", "react", "react-native"],
     "paths": {
       "@/*": ["./*"]
     }

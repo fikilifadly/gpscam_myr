@@ -9,11 +9,11 @@ const { scaleSize } = Size;
 const { COLORS } = Constants;
 
 /**
- * List tab showing photo gallery
+ * Gallery screen for direct navigation
  * 
  * @returns {React.FC} Gallery screen component
  */
-export default function ListScreen() {
+export default function GalleryScreen() {
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
       <PhotoGallery />
@@ -27,22 +27,3 @@ const styles = {
     backgroundColor: COLORS.BACKGROUND_PRIMARY,
   },
 };
-
-// import GeneralText from "@/components/GeneralText/GeneralText.component";
-// import { SafeAreaView } from "react-native-safe-area-context";
-
-// import Constant from "@/constants";
-
-// const {
-// 	GENERAL_TEXT: {
-// 		VARIANTS: { SECTION_TITLE },
-// 	},
-// } = Constant;
-
-// export default function HomeScreen() {
-// 	return (
-// 		<SafeAreaView edges={["top", "left", "right"]} style={{ flex: 1 }}>
-// 			<GeneralText text="List data" variant={SECTION_TITLE} />
-// 		</SafeAreaView>
-// 	);
-// }
