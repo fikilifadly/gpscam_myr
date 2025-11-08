@@ -3,37 +3,22 @@ import { View, TouchableOpacity, ScrollView, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import GeneralText from '@/components/GeneralText/GeneralText.component';
-import Constants from '@/constants';
-import { Size } from '@/utils';
+import Constant from '@/constants';
+import styles from './home.styles';
 
-const { scaleFont, scaleSize } = Size;
 const {
   GENERAL_TEXT: {
     VARIANTS: { SECTION_TITLE, SECTION_SUBTITLE, BUTTON },
   },
-  COLORS,
-  SPACING,
-  BORDER_RADIUS,
-} = Constants;
+} = Constant;
 
-/**
- * Home screen serving as navigation hub for GPS Camera app
- * 
- * @returns {React.FC} Home screen component
- */
 export default function HomeScreen() {
   const router = useRouter();
 
-  /**
-   * Navigate to camera screen
-   */
   const navigateToCamera = (): void => {
     router.push('/camera');
   };
 
-  /**
-   * Navigate to gallery screen
-   */
   const navigateToGallery = (): void => {
     router.push('/gallery');
   };
@@ -115,31 +100,19 @@ export default function HomeScreen() {
           <View style={styles.statusList}>
             <View style={styles.statusItem}>
               <View style={[styles.statusIndicator, styles.statusSuccess]} />
-              <GeneralText 
-                text="Camera: Ready" 
-                variant={SECTION_SUBTITLE}
-              />
+              <GeneralText text="Camera: Ready" variant={SECTION_SUBTITLE} />
             </View>
             <View style={styles.statusItem}>
               <View style={[styles.statusIndicator, styles.statusSuccess]} />
-              <GeneralText 
-                text="GPS Location: Ready" 
-                variant={SECTION_SUBTITLE}
-              />
+              <GeneralText text="GPS Location: Ready" variant={SECTION_SUBTITLE} />
             </View>
             <View style={styles.statusItem}>
               <View style={[styles.statusIndicator, styles.statusSuccess]} />
-              <GeneralText 
-                text="Weather Data: Ready" 
-                variant={SECTION_SUBTITLE}
-              />
+              <GeneralText text="Weather Data: Ready" variant={SECTION_SUBTITLE} />
             </View>
             <View style={styles.statusItem}>
               <View style={[styles.statusIndicator, styles.statusSuccess]} />
-              <GeneralText 
-                text="Firebase Storage: Connected" 
-                variant={SECTION_SUBTITLE}
-              />
+              <GeneralText text="Firebase Storage: Connected" variant={SECTION_SUBTITLE} />
             </View>
           </View>
         </View>
@@ -160,146 +133,3 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
-// Styles defined in the same file
-const styles = {
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.BACKGROUND_PRIMARY,
-  },
-  
-  scrollContent: {
-    flexGrow: 1,
-    padding: scaleSize(SPACING.MD),
-  },
-
-  header: {
-    alignItems: 'center',
-    paddingVertical: scaleSize(SPACING.XL),
-    marginBottom: scaleSize(SPACING.LG),
-  },
-
-  quickActions: {
-    backgroundColor: COLORS.WHITE,
-    padding: scaleSize(SPACING.LG),
-    borderRadius: scaleSize(BORDER_RADIUS.LG),
-    shadowColor: COLORS.BLACK,
-    shadowOffset: {
-      width: 0,
-      height: scaleSize(SPACING.XS),
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: scaleSize(SPACING.SM),
-    elevation: 3,
-    marginBottom: scaleSize(SPACING.LG),
-  },
-
-  actionButtons: {
-    gap: scaleSize(SPACING.MD),
-    marginTop: scaleSize(SPACING.MD),
-  },
-
-  actionButton: {
-    flexDirection: 'row',
-    padding: scaleSize(SPACING.LG),
-    borderRadius: scaleSize(BORDER_RADIUS.MD),
-    alignItems: 'center',
-  },
-
-  primaryButton: {
-    backgroundColor: COLORS.PRIMARY,
-  },
-
-  secondaryButton: {
-    backgroundColor: COLORS.SECONDARY,
-    borderWidth: 1,
-    borderColor: COLORS.PRIMARY,
-  },
-
-  buttonIcon: {
-    width: scaleSize(40),
-    height: scaleSize(40),
-    borderRadius: scaleSize(20),
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: scaleSize(SPACING.MD),
-  },
-
-  iconText: {
-    fontSize: scaleFont(18),
-  },
-
-  buttonContent: {
-    flex: 1,
-  },
-
-  statusContainer: {
-    backgroundColor: COLORS.WHITE,
-    padding: scaleSize(SPACING.LG),
-    borderRadius: scaleSize(BORDER_RADIUS.LG),
-    shadowColor: COLORS.BLACK,
-    shadowOffset: {
-      width: 0,
-      height: scaleSize(SPACING.XS),
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: scaleSize(SPACING.SM),
-    elevation: 3,
-    marginBottom: scaleSize(SPACING.LG),
-  },
-
-  statusList: {
-    marginTop: scaleSize(SPACING.MD),
-    gap: scaleSize(SPACING.SM),
-  },
-
-  statusItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scaleSize(SPACING.MD),
-  },
-
-  statusIndicator: {
-    width: scaleSize(12),
-    height: scaleSize(12),
-    borderRadius: scaleSize(6),
-  },
-
-  statusSuccess: {
-    backgroundColor: COLORS.SUCCESS,
-  },
-
-  infoContainer: {
-    backgroundColor: COLORS.WHITE,
-    padding: scaleSize(SPACING.LG),
-    borderRadius: scaleSize(BORDER_RADIUS.LG),
-    shadowColor: COLORS.BLACK,
-    shadowOffset: {
-      width: 0,
-      height: scaleSize(SPACING.XS),
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: scaleSize(SPACING.SM),
-    elevation: 3,
-  },
-};
-
-// import GeneralText from "@/components/GeneralText/GeneralText.component";
-// import { SafeAreaView } from "react-native-safe-area-context";
-
-// import Constant from "@/constants";
-
-// const {
-// 	GENERAL_TEXT: {
-// 		VARIANTS: { SECTION_TITLE },
-// 	},
-// } = Constant;
-
-// export default function HomeScreen() {
-// 	return (
-// 		<SafeAreaView edges={["top", "left", "right"]} style={{ flex: 1 }}>
-// 			<GeneralText text="welcome" variant={SECTION_TITLE} />
-// 		</SafeAreaView>
-// 	);
-// }

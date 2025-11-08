@@ -1,131 +1,124 @@
 import { StyleSheet } from 'react-native';
-import Constants from '@/constants';
-import { Size } from '@/utils';
-import { getTypographyStyle } from '@/utils/typography';
+import Constant from '@/constants';
 
-const { scaleFont, scaleSize } = Size;
-const { COLORS, SPACING, TYPOGRAPHY } = Constants;
+const { COLORS } = Constant;
 
-/**
- * Photo Details component styles
- */
-const styles = StyleSheet.create({
+export default StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND_PRIMARY,
+    backgroundColor: COLORS.WHITE,
   },
-  
-  // Header styles
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: scaleSize(SPACING.MD),
+    padding: 16,
     backgroundColor: COLORS.WHITE,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.GRAY_LIGHT,
+    borderBottomColor: '#F2F2F7',
   },
+
   backButton: {
-    padding: scaleSize(SPACING.SM),
+    padding: 8,
   },
-  backButtonText: {
-    ...getTypographyStyle('BUTTON_MEDIUM', { color: COLORS.PRIMARY }),
-  },
+
   title: {
-    ...getTypographyStyle('HEADER_MEDIUM', { 
-      color: COLORS.TEXT_PRIMARY,
-      align: TYPOGRAPHY.TEXT_ALIGN_CENTER 
-    }),
+    fontSize: 18,
+    color: COLORS.BLACK,
+    fontWeight: '600',
     flex: 1,
     textAlign: 'center',
   },
+
   headerSpacer: {
-    width: scaleSize(60),
+    width: 60,
   },
 
-  // Photo styles
   photoContainer: {
     backgroundColor: COLORS.BLACK,
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   photo: {
     width: '100%',
-    height: scaleSize(300),
+    height: 300,
   },
 
-  // Section styles
   section: {
     backgroundColor: COLORS.WHITE,
-    margin: scaleSize(SPACING.MD),
-    padding: scaleSize(SPACING.LG),
-    borderRadius: scaleSize(SPACING.BORDER_RADIUS_LG),
+    margin: 16,
+    padding: 24,
+    borderRadius: 12,
     shadowColor: COLORS.BLACK,
     shadowOffset: {
       width: 0,
-      height: scaleSize(SPACING.XS),
+      height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: scaleSize(SPACING.SM),
+    shadowRadius: 8,
     elevation: 2,
   },
+
   sectionTitle: {
-    ...getTypographyStyle('HEADER_SMALL', { color: COLORS.TEXT_PRIMARY }),
-    marginBottom: scaleSize(SPACING.MD),
+    fontSize: 18,
+    color: COLORS.BLACK,
+    fontWeight: '600',
+    marginBottom: 16,
   },
 
-  // Info row styles
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: scaleSize(SPACING.SM),
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.GRAY_LIGHT,
+    borderBottomColor: '#F2F2F7',
   },
+
   infoLabel: {
-    ...getTypographyStyle('LABEL_MEDIUM', { color: COLORS.TEXT_SECONDARY }),
+    fontSize: 14,
+    color: '#8E8E93',
+    fontWeight: '500',
     flex: 1,
   },
+
   infoValue: {
-    ...getTypographyStyle('BODY_MEDIUM', { color: COLORS.TEXT_PRIMARY }),
+    fontSize: 16,
+    color: COLORS.BLACK,
     flex: 2,
     textAlign: 'right',
   },
-  mockWarning: {
-    color: COLORS.WARNING,
-    fontWeight: TYPOGRAPHY.FONT_WEIGHT_BOLD,
-  },
-  authentic: {
-    color: COLORS.SUCCESS,
-    fontWeight: TYPOGRAPHY.FONT_WEIGHT_BOLD,
-  },
 
-  // Button styles
   mapButton: {
     backgroundColor: COLORS.PRIMARY,
-    padding: scaleSize(SPACING.MD),
-    borderRadius: scaleSize(SPACING.BORDER_RADIUS_MD),
+    padding: 16,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: scaleSize(SPACING.MD),
+    marginTop: 16,
   },
+
   mapButtonText: {
-    ...getTypographyStyle('BUTTON_MEDIUM', { color: COLORS.WHITE }),
+    fontSize: 16,
+    color: COLORS.WHITE,
+    fontWeight: '600',
   },
-  
-  // Actions section
+
   actionsSection: {
-    padding: scaleSize(SPACING.MD),
+    padding: 16,
   },
+
   shareButton: {
-    backgroundColor: COLORS.INFO,
-    padding: scaleSize(SPACING.MD),
-    borderRadius: scaleSize(SPACING.BORDER_RADIUS_MD),
+    backgroundColor: '#5AC8FA',
+    padding: 16,
+    borderRadius: 8,
     alignItems: 'center',
   },
+
   shareButtonText: {
-    ...getTypographyStyle('BUTTON_MEDIUM', { color: COLORS.WHITE }),
+    fontSize: 16,
+    color: COLORS.WHITE,
+    fontWeight: '600',
   },
 });
-
-export default styles;
