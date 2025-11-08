@@ -1,22 +1,28 @@
-import { SetterState, PromiseVoid, AsyncVoidFunction } from '@/types/index.';
-import { Camera as ExpoCamera, CameraType, Camera } from 'expo-camera';
-import { UseFirebase } from '@/hooks/firebase/useFirebase.types';
-import { RefObject } from 'react';
+// components/Camera.component.types.ts
+import { Camera as ExpoCamera, CameraType } from 'expo-camera';
+import { PhotoData } from '@/types/index.';
 
-export type States = Pick<UseFirebase, 'uploadPhoto'> & {
-  cameraRef: RefObject<ExpoCamera>;
-  hasPermission: boolean;
-  setHasPermission: SetterState<boolean>;
-  cameraType: CameraType;
-  setCameraType: SetterState<CameraType>;
+export interface States {
+  cameraRef: React.RefObject<ExpoCamera>;
+  hasPermission: boolean | null;
+  setHasPermission: (permission: boolean) => void;
+  cameraType: CameraType; // Make sure this is included
+  setCameraType: (type: CameraType) => void;
   isCapturing: boolean;
-  setIsCapturing: SetterState<boolean>;
+  setIsCapturing: (capturing: boolean) => void;
   uploadLoading: boolean;
+  uploadPhoto: (photoData: Omit<PhotoData, "id" | "createdAt">) => Promise<string>;
+  isGrantingPermission: boolean;
+  setIsGrantingPermission: (granting: boolean) => void;
 };
-
-export interface UseCamera extends States {
-  requestPermissions: () => PromiseVoid;
-  handleCapturePhoto: () => AsyncVoidFunction;
+export interface UseCamera {
+  cameraRef: React.RefObject<ExpoCamera>;
+  hasPermission: boolean | null;
+  cameraType: CameraType;
+  isCapturing: boolean;
+  uploadLoading: boolean;
+  isGrantingPermission: boolean;
+  handleCapturePhoto: () => void;
   toggleCameraType: () => void;
-  grantPermission: () => PromiseVoid;
-}
+  grantPermission: () => void;
+};

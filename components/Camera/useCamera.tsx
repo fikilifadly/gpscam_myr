@@ -1,87 +1,109 @@
+// hooks/useCamera.ts
 import { useState, useRef, useEffect } from "react";
 import { Alert } from "react-native";
 import { Camera as ExpoCamera, CameraType } from "expo-camera";
 import { AsyncVoidFunction, PhotoData, PromiseVoid } from "@/types/index.";
 import cameraService from "@/services/camera";
+import locationService from "@/services/location";
+import MockDetectionService from "@/services/mock/index";
 import useFirebase from "@/hooks/firebase/useFirebase";
 import { States, UseCamera } from "./Camera.component.types";
 
 /**
  * Process and upload photo to Firebase
- *
- * @param {string} imageUri - Original image URI
- * @param {Function} uploadPhoto - Upload photo function
- * @returns {PromiseVoid} Promise that resolves when photo is uploaded
- * @private
  */
-const _processAndUploadPhoto = async (imageUri: string, uploadPhoto: (photoData: Omit<PhotoData, "id" | "createdAt">) => Promise<string>): PromiseVoid => {
+const _processAndUploadPhoto = async (
+  imageUri: string,
+  photoData: Omit<PhotoData, "id" | "createdAt">,
+  uploadPhoto: (photoData: Omit<PhotoData, "id" | "createdAt">) => Promise<string>
+): PromiseVoid => {
   try {
+    console.log("Processing image for upload...");
     const compressedUri = await cameraService.compressImage(imageUri);
     const imageBase64 = await cameraService.imageToBase64(compressedUri);
 
-    // TODO: Get location data (will implement in next step)
-    const locationData = {
-      latitude: -6.2,
-      longitude: 106.816666,
-      altitude: null,
-      compassHeading: null,
-      magneticField: null,
-      weather: null,
+    const finalPhotoData = {
+      ...photoData,
+      imageBase64: imageBase64,
     };
 
-    const photoData: Omit<PhotoData, "id" | "createdAt"> = {
-      imageBase64,
-      isMockLocation: false,
-      location: locationData,
-      exifData: {
-        customGeoTag: `X-DataGeoTag: ${locationData.latitude}, ${locationData.longitude}`,
-      },
-    };
+    console.log("Uploading photo to Firebase...");
+    const photoId = await uploadPhoto(finalPhotoData);
+    console.log("Photo uploaded successfully:", photoId);
 
-    const photoId = await uploadPhoto(photoData);
-
-    Alert.alert("Success", `Photo uploaded with ID: ${photoId}`);
+    return photoId;
   } catch (error) {
     console.error("Error processing photo:", error);
-    Alert.alert("Error", "Failed to process and upload photo");
     throw error;
   }
 };
 
 /**
  * Handle capture photo operation
- *
- * @param {React.RefObject<ExpoCamera>} cameraRef - Camera reference
- * @param {boolean} isCapturing - Current capture state
- * @param {Function} setIsCapturing - Set capture state function
- * @param {Function} uploadPhoto - Upload photo function
- * @returns {AsyncVoidFunction} Async function that captures photo
- * @private
  */
 const _handleCapturePhoto = (
   cameraRef: React.RefObject<ExpoCamera>,
   isCapturing: boolean,
   setIsCapturing: (capturing: boolean) => void,
-  uploadPhoto: (photoData: Omit<PhotoData, "id" | "createdAt">) => Promise<string>
+  showPreview: (uri: string, data: Omit<PhotoData, "id" | "createdAt">) => void // Add showPreview parameter
 ): AsyncVoidFunction => {
   return async (): PromiseVoid => {
-    if (!cameraRef.current || isCapturing) return;
+    if (!cameraRef.current || isCapturing) {
+      console.log("Camera not ready or already capturing");
+      return;
+    }
 
+    console.log("Starting photo capture...");
     setIsCapturing(true);
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({
+      // Capture photo with timeout
+      const capturePromise = cameraRef.current.takePictureAsync({
         quality: 0.8,
         base64: false,
       });
 
+      const captureTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Photo capture timeout")), 10000));
+
+      const photo = (await Promise.race([capturePromise, captureTimeout])) as any;
+      console.log("Photo captured:", photo.uri);
+
       if (photo.uri) {
-        await _processAndUploadPhoto(photo.uri, uploadPhoto);
+        // Get location data for preview
+        console.log("Getting location data for preview...");
+        const locationData = await locationService.getEnhancedLocation();
+        const isMocked = await MockDetectionService.checkMockLocation();
+
+        // Create photo data for preview
+        const photoData: Omit<PhotoData, "id" | "createdAt"> = {
+          imageBase64: "", // Will be filled during upload
+          isMockLocation: isMocked,
+          location: {
+            latitude: locationData.latitude,
+            longitude: locationData.longitude,
+            altitude: locationData.altitude,
+            compassHeading: locationData.compassHeading,
+            magneticField: locationData.magneticField,
+            weather: locationData.weather,
+          },
+          exifData: {
+            customGeoTag: `X-DataGeoTag: ${locationData.latitude}, ${locationData.longitude}`,
+          },
+        };
+
+        // Show preview modal - FIXED: Now we have access to showPreview
+        showPreview(photo.uri, photoData);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error capturing photo:", error);
-      Alert.alert("Error", "Failed to capture photo");
+
+      if (error.message.includes("timeout")) {
+        Alert.alert("Timeout", error.message);
+      } else {
+        Alert.alert("Error", "Failed to capture photo");
+      }
     } finally {
+      console.log("Photo capture process completed");
       setIsCapturing(false);
     }
   };
@@ -89,15 +111,14 @@ const _handleCapturePhoto = (
 
 /**
  * States
- *
- * @returns {States} states
  */
 const _states = (): States => {
   const cameraRef = useRef<ExpoCamera>(null);
-  const [hasPermission, setHasPermission] = useState<boolean>(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [cameraType, setCameraType] = useState<CameraType>(CameraType.back);
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
-  const { uploadPhoto, loading } = useFirebase();
+  const [isGrantingPermission, setIsGrantingPermission] = useState<boolean>(false);
+  const { uploadPhoto, loading: uploadLoading } = useFirebase();
 
   return {
     cameraRef,
@@ -107,86 +128,146 @@ const _states = (): States => {
     setCameraType,
     isCapturing,
     setIsCapturing,
-    uploadLoading: loading,
+    uploadLoading,
     uploadPhoto,
+    isGrantingPermission,
+    setIsGrantingPermission,
   };
 };
 
 /**
- * Request camera permissions
- *
- * @param {States} states - states
- * @returns {PromiseVoid} Promise that resolves when permissions are checked
+ * Handle capture photo - FIXED: Accept showPreview parameter
  */
-const _requestPermissions = async ({ setHasPermission }: States): PromiseVoid => {
-  const permission = await cameraService.requestCameraPermissions();
-  setHasPermission(permission);
-};
-
-/**
- * Handle capture photo
- *
- * @param {States} states - states
- * @returns {AsyncVoidFunction} Async function that captures and processes photo
- */
-const _capturePhotoHandler = ({ cameraRef, isCapturing, setIsCapturing, uploadPhoto }: States): AsyncVoidFunction => {
-  return _handleCapturePhoto(cameraRef, isCapturing, setIsCapturing, uploadPhoto);
+const _capturePhotoHandler = (
+  states: States,
+  showPreview: (uri: string, data: Omit<PhotoData, "id" | "createdAt">) => void // Add parameter
+): AsyncVoidFunction => {
+  return _handleCapturePhoto(
+    states.cameraRef,
+    states.isCapturing,
+    states.setIsCapturing,
+    showPreview // Pass showPreview to _handleCapturePhoto
+  );
 };
 
 /**
  * Toggle between front and back camera
- *
- * @param {States} states - states
- * @returns {void} void fn
  */
-const _toggleCameraType = ({ setCameraType }: States): void => {
-  setCameraType((current) => (current === CameraType.back ? CameraType.front : CameraType.back));
+const _toggleCameraType = ({ cameraType, setCameraType }: States): void => {
+  setCameraType(cameraType === CameraType.back ? CameraType.front : CameraType.back);
 };
 
 /**
  * Grant camera permission
- *
- * @param {States} states - states
- * @returns {PromiseVoid}
  */
-const _grantPermission = async ({ setHasPermission }: States): PromiseVoid => {
-  const permission = await cameraService.requestCameraPermissions();
-  setHasPermission(permission);
+const _grantPermission = async ({ setHasPermission, setIsGrantingPermission }: States): PromiseVoid => {
+  try {
+    setIsGrantingPermission(true);
+    const permission = await cameraService.requestCameraPermissions();
+    setHasPermission(permission);
+
+    if (!permission) {
+      Alert.alert("Permission Denied", "Camera permission is required to use this feature. Please enable it in your device settings.", [{ text: "OK" }]);
+    }
+  } catch (error) {
+    console.error("Error granting permission:", error);
+    Alert.alert("Error", "Failed to request camera permission");
+    setHasPermission(false);
+  } finally {
+    setIsGrantingPermission(false);
+  }
 };
 
 /**
- * _useEffectPermission
- * 
- * @param {States} states - states
- * @returns {void} void fn
+ * Initialize camera permissions
  */
-const _useEffectPermission = ({ setHasPermission }: States): void => {
+const _useEffectPermission = (states: States): void => {
+  const { setHasPermission, setIsGrantingPermission } = states;
+
   useEffect(() => {
     const initializeCamera = async (): Promise<void> => {
-      const permission = await cameraService.requestCameraPermissions();
-      setHasPermission(permission);
+      try {
+        setIsGrantingPermission(true);
+        console.log("Initializing camera permissions...");
+        const permission = await cameraService.requestCameraPermissions();
+        console.log("Camera permission initialized:", permission);
+        setHasPermission(permission);
+      } catch (error) {
+        console.error("Error initializing camera:", error);
+        setHasPermission(false);
+      } finally {
+        setIsGrantingPermission(false);
+      }
     };
 
     initializeCamera();
   }, []);
-}
+};
 
 /**
  * Camera hook for managing camera operations and state
- *
- * @returns {Object} Camera state and operations
  */
 const useCamera = (): UseCamera => {
   const states = _states();
+
+  // Preview modal states
+  const [previewVisible, setPreviewVisible] = useState<boolean>(false);
+  const [previewPhotoUri, setPreviewPhotoUri] = useState<string>("");
+  const [previewPhotoData, setPreviewPhotoData] = useState<Omit<PhotoData, "id" | "createdAt"> | null>(null);
+
+  // FIXED: Define showPreview before using it
+  const showPreview = (uri: string, data: Omit<PhotoData, "id" | "createdAt">) => {
+    setPreviewPhotoUri(uri);
+    setPreviewPhotoData(data);
+    setPreviewVisible(true);
+  };
+
+  const hidePreview = () => {
+    setPreviewVisible(false);
+    setPreviewPhotoUri("");
+    setPreviewPhotoData(null);
+  };
+
+  const retakePhoto = () => {
+    console.log("Retaking photo, resetting states...");
+
+    // Reset any capturing states to ensure camera is ready
+    states.setIsCapturing(false);
+
+    // Clear any pending timeouts or operations
+    hidePreview();
+
+    // Small delay to ensure camera is ready (optional but helpful)
+    setTimeout(() => {
+      console.log("Camera should be ready for retake now");
+    }, 100);
+  };
+
+  const processUpload = async (photoData: Omit<PhotoData, "id" | "createdAt">) => {
+    try {
+      const photoId = await _processAndUploadPhoto(previewPhotoUri, photoData, states.uploadPhoto);
+      hidePreview();
+      Alert.alert("Success", "Photo uploaded successfully!");
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      Alert.alert("Error", "Failed to upload photo");
+      throw error;
+    }
+  };
 
   _useEffectPermission(states);
 
   return {
     ...states,
-     requestPermissions: () => _requestPermissions(states),
-    handleCapturePhoto: () => _capturePhotoHandler(states),
+    previewVisible,
+    previewPhotoUri,
+    previewPhotoData,
+    handleCapturePhoto: _capturePhotoHandler(states, showPreview),
     toggleCameraType: () => _toggleCameraType(states),
     grantPermission: () => _grantPermission(states),
+    retakePhoto,
+    processUpload,
+    hidePreview,
   };
 };
 

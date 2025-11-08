@@ -1,0 +1,175 @@
+// components/PhotoPreviewModal.styles.ts
+import { StyleSheet } from 'react-native';
+
+export default StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#212529',
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f8f9fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: '#6c757d',
+    fontWeight: 'bold',
+  },
+  content: {
+    flex: 1,
+  },
+  photoContainer: {
+    margin: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  photo: {
+    width: '100%',
+    height: 300,
+  },
+  infoCard: {
+    margin: 16,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#212529',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingVertical: 4,
+  },
+  mockDetectionRow: {
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e9ecef',
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#495057',
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: '#212529',
+    flex: 2,
+    textAlign: 'right',
+    fontWeight: '500',
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  mockBadge: {
+    backgroundColor: '#fff3cd',
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+  },
+  cleanBadge: {
+    backgroundColor: '#d1edff',
+    borderWidth: 1,
+    borderColor: '#b3d9ff',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  geoTagContainer: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  geoTagLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6c757d',
+    marginBottom: 4,
+  },
+  geoTagValue: {
+    fontSize: 11,
+    color: '#495057',
+    fontFamily: 'monospace',
+  },
+  actions: {
+    flexDirection: 'row',
+    padding: 20,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e9ecef',
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  retakeButton: {
+    backgroundColor: '#6c757d',
+  },
+  uploadButton: {
+    backgroundColor: '#007AFF',
+  },
+  uploadButtonDisabled: {
+    backgroundColor: '#c7c7cc',
+  },
+  retakeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  uploadButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  loadingSpinner: {
+    marginRight: 8,
+  },
+});

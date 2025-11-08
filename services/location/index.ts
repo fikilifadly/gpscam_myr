@@ -34,16 +34,19 @@ const requestLocationPermissions = async (): Promise<boolean> => {
 const getCurrentLocation = async (): Promise<Pick<LocationType, "latitude" | "longitude" | "altitude">> => {
   try {
     const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Highest,
+      accuracy: Location.Accuracy.BestForNavigation,
     });
+
+    const altitude = location.coords.altitude !== null && location.coords.altitude !== undefined ? parseFloat(location.coords.altitude.toFixed(2)) : null;
 
     return {
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
-      altitude: location.coords.altitude || 0,
+      altitude
     };
   } catch (error) {
     console.error("Error getting location:", error);
+
     throw new Error("Failed to get current location");
   }
 };
@@ -115,10 +118,11 @@ const _mapWeatherCode = (weatherCode: number): string => {
  * @param {number} longitude - Longitude coordinate
  * @returns {Promise<Weather | null>} Promise that resolves to weather data or null
  */
+// In services/location/index.ts - Fix getWeatherData
 const getWeatherData = async (latitude: number, longitude: number): Promise<Weather | null> => {
   try {
     const response = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&relativehumidity=2m&windspeed=10m&timezone=auto`
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`
     );
 
     if (!response.ok) {
@@ -126,18 +130,22 @@ const getWeatherData = async (latitude: number, longitude: number): Promise<Weat
     }
 
     const data = await response.json();
+    console.log("Weather API response:", JSON.stringify(data, null, 2));
 
-    if (!data.current_weather) {
-      throw new Error("No weather data available");
+    if (!data.current) {
+      console.log("No current weather data available");
+
+      return null;
     }
 
     return {
-      temp: Math.round(data.current_weather.temperature),
-      condition: _mapWeatherCode(data.current_weather.weathercode),
-      humidity: data.current_weather.relativehumidity,
+      temp: Math.round(data.current.temperature_2m),
+      condition: _mapWeatherCode(data.current.weather_code),
+      humidity: data.current.relative_humidity_2m,
+      windSpeed: data.current.wind_speed_10m,
     };
   } catch (error) {
-    console.error("Error fetching weather data from Open-Meteo:", error);
+    console.error("Error fetching weather data:", error);
     return null;
   }
 };
@@ -150,31 +158,41 @@ const getWeatherData = async (latitude: number, longitude: number): Promise<Weat
 const getCompassHeading = async (): Promise<number | null> => {
   try {
     const isAvailable = await Magnetometer.isAvailableAsync();
+    console.log("Magnetometer available:", isAvailable);
 
     if (!isAvailable) {
-      console.log("Magnetometer not available on this device");
       return null;
     }
 
-    Magnetometer.setUpdateInterval(100);
-
     return new Promise((resolve) => {
-      const subscription = Magnetometer.addListener((data) => {
-        const { x, y } = data;
+      let headingCalculated = false;
 
-        // Calculate compass heading
+      const subscription = Magnetometer.addListener((magnetometerData) => {
+        const { x, y } = magnetometerData;
+
         let heading = Math.atan2(y, x) * (180 / Math.PI);
         if (heading < 0) heading += 360;
 
-        subscription.remove();
-        resolve(Math.round(heading));
+        const roundedHeading = Math.round(heading);
+
+        console.log("Raw magnetometer:", { x, y, heading: roundedHeading });
+
+        if (!headingCalculated) {
+          headingCalculated = true;
+          subscription.remove();
+          resolve(roundedHeading);
+        }
       });
 
-      // Timeout after 3 seconds
+      Magnetometer.setUpdateInterval(100);
+
       setTimeout(() => {
-        subscription.remove();
-        resolve(null);
-      }, 3000);
+        if (!headingCalculated) {
+          subscription.remove();
+          console.log("Compass heading timeout");
+          resolve(null);
+        }
+      }, 5000);
     });
   } catch (error) {
     console.error("Error getting compass heading:", error);
@@ -193,23 +211,32 @@ const getMagneticField = async (): Promise<number | null> => {
     if (!isAvailable) return null;
 
     return new Promise((resolve) => {
+      let fieldCalculated = false;
+
       const subscription = Magnetometer.addListener((data) => {
         const { x, y, z } = data;
         const strength = Math.sqrt(x * x + y * y + z * z);
 
-        subscription.remove();
+        console.log("Magnetic field raw:", { x, y, z, strength });
 
-        resolve(parseFloat(strength.toFixed(2)));
+        if (!fieldCalculated) {
+          fieldCalculated = true;
+          subscription.remove();
+          resolve(parseFloat(strength.toFixed(2)));
+        }
       });
 
+      Magnetometer.setUpdateInterval(100);
+
       setTimeout(() => {
-        subscription.remove();
-        resolve(null);
-      }, 3000);
+        if (!fieldCalculated) {
+          subscription.remove();
+          resolve(null);
+        }
+      }, 5000);
     });
   } catch (error) {
     console.error("Error getting magnetic field:", error);
-
     return null;
   }
 };
@@ -222,16 +249,29 @@ const getMagneticField = async (): Promise<number | null> => {
 const getEnhancedLocation = async (): Promise<LocationType> => {
   try {
     const location = await getCurrentLocation();
-    const [weather, compassHeading, magneticField] = await Promise.all([getWeatherData(location.latitude, location.longitude), getCompassHeading(), getMagneticField()]);
+    console.log('Basic location obtained:', location);
 
-    return {
+    const [weather, compassHeading, magneticField] = await Promise.allSettled([
+      getWeatherData(location.latitude, location.longitude),
+      getCompassHeading(),
+      getMagneticField(),
+    ]).then(results => 
+      results.map(result => 
+        result.status === 'fulfilled' ? result.value : null
+      )
+    );
+
+    const enhancedLocation = {
       latitude: location.latitude,
       longitude: location.longitude,
       altitude: location.altitude,
-      compassHeading,
-      magneticField,
-      weather,
+      compassHeading: compassHeading as number | null,
+      magneticField: magneticField as number | null,
+      weather: weather as Weather | null,
     };
+
+    console.log('Final enhanced location:', enhancedLocation);
+    return enhancedLocation;
   } catch (error) {
     console.error("Error getting enhanced location:", error);
     throw error;

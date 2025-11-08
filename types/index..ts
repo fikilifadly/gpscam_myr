@@ -18,6 +18,7 @@ export type Weather = {
   temp: number,
   condition: string,
   humidity: number,
+  windSpeed: number,
 };
 
 export type Location = {

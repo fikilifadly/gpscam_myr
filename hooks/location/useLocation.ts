@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import * as Location from 'expo-location';
+import { Magnetometer } from 'expo-sensors';
 import { PromiseVoid } from '@/types/index.';
+import { UseLocation } from './useLocation.types';
 
 /**
  * Hook for managing location permissions
  * 
  * @returns {Object} Location permissions state and operations
  */
-const useLocation = () => {
+const useLocation = (): UseLocation => {
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean>(false);
   const [isCheckingLocation, setIsCheckingLocation] = useState<boolean>(true);
+  const [hasSensorPermission, setHasSensorPermission] = useState<boolean>(false);
 
   /**
    * Check current location permissions
@@ -27,6 +30,23 @@ const useLocation = () => {
       setHasLocationPermission(false);
     } finally {
       setIsCheckingLocation(false);
+    }
+  };
+
+  /**
+   * check sensor
+   * 
+   * @returns {Promise<void>} check sensor
+   */
+  const _checkSensors = async (): Promise<void> => {
+    try {
+      const isAvailable = await Magnetometer.isAvailableAsync();
+      console.log('Magnetometer sensor available:', isAvailable);
+     
+      setHasSensorPermission(isAvailable);
+    } catch (error) {
+      console.error('Error checking sensor availability:', error);
+      setHasSensorPermission(false);
     }
   };
 
@@ -65,11 +85,19 @@ const useLocation = () => {
 
   // Check permissions on mount
   useEffect(() => {
-    _checkLocationPermissions();
+    const initialize = async () => {
+      await Promise.all([
+        _checkLocationPermissions(),
+        _checkSensors(),
+      ]);
+    };
+    
+    initialize();
   }, []);
 
   return {
     hasLocationPermission,
+    hasSensorPermission,
     isCheckingLocation,
     requestLocationPermissions,
   };
