@@ -20,7 +20,10 @@
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.FOREGROUND_SERVICE"
       ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -30,7 +33,7 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-     "plugins": [
+    "plugins": [
       [
         "expo-camera",
         {
@@ -56,6 +59,7 @@
       "eas": {
         "projectId": "ee66c0f8-37be-4132-bb60-0455706f797a"
       }
-    }
+    },
+    "owner": "fikilifadly"
   }
 }
