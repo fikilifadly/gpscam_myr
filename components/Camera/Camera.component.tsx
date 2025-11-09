@@ -1,4 +1,3 @@
-// components/CameraComponent.tsx
 import React from 'react';
 import { View, TouchableOpacity, Text, ActivityIndicator, Alert } from 'react-native';
 import { Camera as ExpoCamera } from 'expo-camera';
@@ -29,14 +28,11 @@ const CameraComponent: React.FC = () => {
     requestLocationPermissions 
   } = useLocation();
 
-  // Check if we have all required permissions
   const hasAllPermissions = hasPermission && hasLocationPermission;
 
-  // Combined loading states
   const isLoading = isCheckingLocation || isGrantingPermission;
   const isButtonDisabled = isCapturing || uploadLoading || isLoading || !hasAllPermissions;
 
-  // Show loading while checking permissions
   if (hasPermission === null || isLoading) {
     return (
       <View style={[styles.container, styles.permissionContainer]}>

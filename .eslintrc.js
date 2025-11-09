@@ -19,6 +19,7 @@ module.exports = {
   },
   rules: {
     'no-unused-vars': 'off',
+    'react-native/no-color-literals': 'off',
     '@typescript-eslint/no-unused-vars': [
       'warn',
       {

@@ -72,8 +72,6 @@ export const compressImage = async (imageUri: string): Promise<string> => {
  */
 export const imageToBase64 = async (imageUri: string): Promise<string> => {
   try {
-    // For Expo, we can use FileSystem to read the image
-    // This is a simplified version - you might need expo-file-system
     const response = await fetch(imageUri);
     const blob = await response.blob();
     

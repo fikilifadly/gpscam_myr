@@ -1,42 +1,30 @@
-// screens/GalleryScreen.tsx
 import React, { useEffect } from 'react';
 import { View, FlatList, Image, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import useFirebase from '@/hooks/firebase/useFirebase';
+import WebViewMap from '@/components/Map/Map.component';
 
 const ListScreen: React.FC = () => {
   const { photos, loadPhotos, loading, deletePhoto } = useFirebase();
 
   const debugBase64Data = (photos: any[]) => {
-  photos.forEach((photo, index) => {
-    console.log(`=== Photo ${index + 1} Debug ===`);
-    console.log('Photo ID:', photo.id);
-    console.log('Has imageBase64:', !!photo.imageBase64);
-    
-    if (photo.imageBase64) {
-      console.log('Base64 length:', photo.imageBase64.length);
-      console.log('Starts with data:image:', photo.imageBase64.startsWith('data:image'));
-      console.log('First 100 chars:', photo.imageBase64.substring(0, 100));
-    }
-    
-    console.log('Location data:', photo.location);
-    console.log('================');
-  });
-};
-
-// Call it in your useEffect
-useEffect(() => {
-  loadPhotos();
-}, []);
-
-useEffect(() => {
-  if (photos.length > 0 && !loading) {
-    debugBase64Data(photos);
-  }
-}, [photos, loading]);
+    photos.forEach((photo, index) => {
+      console.log(`=== Photo ${index + 1} Debug ===`);
+      console.log('Photo ID:', photo.id);
+      console.log('Has imageBase64:', !!photo.imageBase64);
+      console.log('Location data:', photo.location);
+      console.log('================');
+    });
+  };
 
   useEffect(() => {
     loadPhotos();
   }, []);
+
+  useEffect(() => {
+    if (photos.length > 0 && !loading) {
+      debugBase64Data(photos);
+    }
+  }, [photos, loading]);
 
   const handleDeletePhoto = (photoId: string) => {
     Alert.alert(
@@ -53,9 +41,7 @@ useEffect(() => {
     );
   };
 
-  // FIX: Proper base64 image rendering
   const renderPhotoItem = ({ item }: { item: any }) => {
-    // Ensure we have valid base64 data
     if (!item.imageBase64) {
       console.log('No imageBase64 found for item:', item.id);
       return (
@@ -63,6 +49,15 @@ useEffect(() => {
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>Image not available</Text>
           </View>
+          
+          {item.location?.latitude && item.location?.longitude && (
+            <WebViewMap
+              latitude={item.location.latitude}
+              longitude={item.location.longitude}
+              altitude={item.location.altitude}
+            />
+          )}
+          
           <View style={styles.photoInfo}>
             <Text style={styles.locationText}>
               📍 {item.location?.latitude?.toFixed(6) || 'N/A'}, {item.location?.longitude?.toFixed(6) || 'N/A'}
@@ -75,15 +70,10 @@ useEffect(() => {
       );
     }
 
-    // Clean up base64 data if needed
     let imageSource = item.imageBase64;
-    
-    // If base64 data doesn't have data URL prefix, add it
     if (!imageSource.startsWith('data:image/')) {
       imageSource = `data:image/jpeg;base64,${imageSource}`;
     }
-    
-    // Remove any extra quotes or spaces
     imageSource = imageSource.trim().replace(/^"(.*)"$/, '$1');
 
     return (
@@ -94,31 +84,57 @@ useEffect(() => {
           resizeMode="cover"
           onError={(error) => {
             console.log('Image loading error:', error.nativeEvent.error);
-            console.log('Image source:', imageSource.substring(0, 100) + '...');
           }}
           onLoad={() => console.log('Image loaded successfully for item:', item.id)}
         />
+        
+        {/* Map Section - FIXED: Using WebViewMap correctly */}
+        {item.location?.latitude && item.location?.longitude && (
+          <WebViewMap
+            latitude={item.location.latitude}
+            longitude={item.location.longitude}
+            altitude={item.location.altitude}
+          />
+        )}
+
         <View style={styles.photoInfo}>
           <Text style={styles.locationText}>
-            📍 {item.location?.latitude?.toFixed(6) || 'N/A'}, {item.location?.longitude?.toFixed(6) || 'N/A'}
+            📍 Coordinates: {item.location?.latitude?.toFixed(6) || 'N/A'}, {item.location?.longitude?.toFixed(6) || 'N/A'}
           </Text>
+          
           <Text style={styles.mockText}>
             {item.isMockLocation ? '⚠️ Suspected Mock Location' : '✅ Clean Location'}
           </Text>
+          
           <Text style={styles.weatherText}>
             {item.location?.weather ? `🌤 ${item.location.weather.condition}, ${item.location.weather.temp}°C` : '🌤 Weather data unavailable'}
           </Text>
+          
+          {item.location?.compassHeading && (
+            <Text style={styles.compassText}>
+              🧭 Heading: {item.location.compassHeading}°
+            </Text>
+          )}
+          
+          {item.location?.magneticField && (
+            <Text style={styles.magneticText}>
+              🧲 Magnetic Field: {item.location.magneticField} μT
+            </Text>
+          )}
+          
           <Text style={styles.timestampText}>
             📅 {item.createdAt ? new Date(item.createdAt?.toDate?.() || item.createdAt).toLocaleString() : 'Unknown date'}
           </Text>
+          
           <Text style={styles.geoTagText}>
             {item.exifData?.customGeoTag || 'No geo tag'}
           </Text>
+          
           <TouchableOpacity 
             style={styles.deleteButton}
             onPress={() => handleDeletePhoto(item.id!)}
           >
-            <Text style={styles.deleteButtonText}>Delete</Text>
+            <Text style={styles.deleteButtonText}>Delete Photo</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -153,7 +169,13 @@ useEffect(() => {
   );
 };
 
+// Your existing styles remain the same...
 const styles = StyleSheet.create({
+  compassText: {
+    color: '#666',
+    fontSize: 12,
+    marginBottom: 4,
+  },
   container: {
     backgroundColor: '#f5f5f5',
     flex: 1,
@@ -163,6 +185,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: '#ff3b30',
     borderRadius: 8,
+    marginTop: 8,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
@@ -201,7 +224,7 @@ const styles = StyleSheet.create({
     color: '#888',
     fontFamily: 'monospace',
     fontSize: 10,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   listContent: {
     paddingBottom: 16,
@@ -219,6 +242,11 @@ const styles = StyleSheet.create({
     color: '#333',
     fontSize: 14,
     fontWeight: '600',
+    marginBottom: 4,
+  },
+  magneticText: {
+    color: '#666',
+    fontSize: 12,
     marginBottom: 4,
   },
   mockText: {

@@ -118,7 +118,6 @@ const _mapWeatherCode = (weatherCode: number): string => {
  * @param {number} longitude - Longitude coordinate
  * @returns {Promise<Weather | null>} Promise that resolves to weather data or null
  */
-// In services/location/index.ts - Fix getWeatherData
 const getWeatherData = async (latitude: number, longitude: number): Promise<Weather | null> => {
   try {
     const response = await fetch(

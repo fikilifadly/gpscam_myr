@@ -1,4 +1,3 @@
-// hooks/useCamera.ts
 import { useState, useRef, useEffect } from "react";
 import { Alert } from "react-native";
 import { Camera as ExpoCamera, CameraType } from "expo-camera";
@@ -45,7 +44,7 @@ const _handleCapturePhoto = (
   cameraRef: React.RefObject<ExpoCamera>,
   isCapturing: boolean,
   setIsCapturing: (capturing: boolean) => void,
-  showPreview: (uri: string, data: Omit<PhotoData, "id" | "createdAt">) => void // Add showPreview parameter
+  showPreview: (uri: string, data: Omit<PhotoData, "id" | "createdAt">) => void
 ): AsyncVoidFunction => {
   return async (): PromiseVoid => {
     if (!cameraRef.current || isCapturing) {
@@ -57,7 +56,6 @@ const _handleCapturePhoto = (
     setIsCapturing(true);
 
     try {
-      // Capture photo with timeout
       const capturePromise = cameraRef.current.takePictureAsync({
         quality: 0.8,
         base64: false,
@@ -69,14 +67,12 @@ const _handleCapturePhoto = (
       console.log("Photo captured:", photo.uri);
 
       if (photo.uri) {
-        // Get location data for preview
         console.log("Getting location data for preview...");
         const locationData = await locationService.getEnhancedLocation();
         const isMocked = await MockDetectionService.checkMockLocation();
 
-        // Create photo data for preview
         const photoData: Omit<PhotoData, "id" | "createdAt"> = {
-          imageBase64: "", // Will be filled during upload
+          imageBase64: "", 
           isMockLocation: isMocked,
           location: {
             latitude: locationData.latitude,
@@ -91,7 +87,6 @@ const _handleCapturePhoto = (
           },
         };
 
-        // Show preview modal - FIXED: Now we have access to showPreview
         showPreview(photo.uri, photoData);
       }
     } catch (error: any) {
@@ -140,13 +135,13 @@ const _states = (): States => {
  */
 const _capturePhotoHandler = (
   states: States,
-  showPreview: (uri: string, data: Omit<PhotoData, "id" | "createdAt">) => void // Add parameter
+  showPreview: (uri: string, data: Omit<PhotoData, "id" | "createdAt">) => void
 ): AsyncVoidFunction => {
   return _handleCapturePhoto(
     states.cameraRef,
     states.isCapturing,
     states.setIsCapturing,
-    showPreview // Pass showPreview to _handleCapturePhoto
+    showPreview 
   );
 };
 
@@ -210,12 +205,10 @@ const _useEffectPermission = (states: States): void => {
 const useCamera = (): UseCamera => {
   const states = _states();
 
-  // Preview modal states
   const [previewVisible, setPreviewVisible] = useState<boolean>(false);
   const [previewPhotoUri, setPreviewPhotoUri] = useState<string>("");
   const [previewPhotoData, setPreviewPhotoData] = useState<Omit<PhotoData, "id" | "createdAt"> | null>(null);
 
-  // FIXED: Define showPreview before using it
   const showPreview = (uri: string, data: Omit<PhotoData, "id" | "createdAt">) => {
     setPreviewPhotoUri(uri);
     setPreviewPhotoData(data);
@@ -231,13 +224,10 @@ const useCamera = (): UseCamera => {
   const retakePhoto = () => {
     console.log("Retaking photo, resetting states...");
 
-    // Reset any capturing states to ensure camera is ready
     states.setIsCapturing(false);
 
-    // Clear any pending timeouts or operations
     hidePreview();
 
-    // Small delay to ensure camera is ready (optional but helpful)
     setTimeout(() => {
       console.log("Camera should be ready for retake now");
     }, 100);

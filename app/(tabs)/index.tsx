@@ -73,154 +73,121 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Feature Status */}
-        <View style={styles.statusContainer}>
-          <GeneralText text="Feature Status" variant={SECTION_TITLE} />
-          <View style={styles.statusList}>
-            <View style={styles.statusItem}>
-              <View style={[styles.statusIndicator, styles.statusSuccess]} />
-              <GeneralText text="Camera: Ready" variant={SECTION_SUBTITLE} />
-            </View>
-            <View style={styles.statusItem}>
-              <View style={[styles.statusIndicator, styles.statusSuccess]} />
-              <GeneralText text="GPS Location: Ready" variant={SECTION_SUBTITLE} />
-            </View>
-            <View style={styles.statusItem}>
-              <View style={[styles.statusIndicator, styles.statusSuccess]} />
-              <GeneralText text="Weather Data: Ready" variant={SECTION_SUBTITLE} />
-            </View>
-            <View style={styles.statusItem}>
-              <View style={[styles.statusIndicator, styles.statusSuccess]} />
-              <GeneralText text="Firebase Storage: Connected" variant={SECTION_SUBTITLE} />
-            </View>
-          </View>
-        </View>
-
-        {/* App Info */}
-        <View style={styles.infoContainer}>
-          <GeneralText text="About This App" variant={SECTION_TITLE} />
-          <GeneralText
-            text="This GPS Camera app captures photos with verified location data, weather information, and detects mock GPS locations. All photos are stored with complete metadata including coordinates, altitude, and EXIF data."
-            variant={SECTION_SUBTITLE}
-          />
-        </View>
-
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.WHITE,
+  actionButton: {
+    alignItems: 'center',
+    borderRadius: 8,
+    flexDirection: 'row',
+    padding: 24,
   },
   
-  scrollContent: {
-    flexGrow: 1,
-    padding: 16,
-  },
-
-  header: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    marginBottom: 24,
-  },
-
-  quickActions: {
-    backgroundColor: COLORS.WHITE,
-    padding: 24,
-    borderRadius: 12,
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    marginBottom: 24,
-  },
-
   actionButtons: {
     gap: 16,
     marginTop: 16,
-  },
-
-  actionButton: {
-    flexDirection: 'row',
-    padding: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-
-  primaryButton: {
-    backgroundColor: COLORS.PRIMARY,
-  },
-
-  secondaryButton: {
-    backgroundColor: COLORS.SECONDARY,
-    borderWidth: 1,
-    borderColor: COLORS.PRIMARY,
-  },
-
-  buttonIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-
-  iconText: {
-    fontSize: 18,
   },
 
   buttonContent: {
     flex: 1,
   },
 
-  statusContainer: {
-    backgroundColor: COLORS.WHITE,
-    padding: 24,
-    borderRadius: 12,
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    marginBottom: 24,
-  },
-
-  statusList: {
-    marginTop: 16,
-    gap: 8,
-  },
-
-  statusItem: {
-    flexDirection: 'row',
+  buttonIcon: {
     alignItems: 'center',
-    gap: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    height: 40,
+    justifyContent: 'center',
+    marginRight: 16,
+    width: 40,
   },
 
-  statusIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  container: {
+    backgroundColor: COLORS.WHITE,
+    flex: 1,
   },
 
-  statusSuccess: {
-    backgroundColor: '#34C759',
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingVertical: 32,
+  },
+
+  iconText: {
+    fontSize: 18,
   },
 
   infoContainer: {
     backgroundColor: COLORS.WHITE,
-    padding: 24,
     borderRadius: 12,
+    elevation: 3,
+    padding: 24,
     shadowColor: COLORS.BLACK,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
+  },
+
+  primaryButton: {
+    backgroundColor: COLORS.PRIMARY,
+  },
+
+  quickActions: {
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 12,
     elevation: 3,
+    marginBottom: 24,
+    padding: 24,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+
+  scrollContent: {
+    flexGrow: 1,
+    padding: 16,
+  },
+
+  secondaryButton: {
+    backgroundColor: COLORS.SECONDARY,
+    borderColor: COLORS.PRIMARY,
+    borderWidth: 1,
+  },
+
+  statusContainer: {
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 12,
+    elevation: 3,
+    marginBottom: 24,
+    padding: 24,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+
+  statusIndicator: {
+    borderRadius: 6,
+    height: 12,
+    width: 12,
+  },
+
+  statusItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 16,
+  },
+
+  statusList: {
+    gap: 8,
+    marginTop: 16,
+  },
+
+  statusSuccess: {
+    backgroundColor: '#34C759',
   },
 });

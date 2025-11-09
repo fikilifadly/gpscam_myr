@@ -15,10 +15,9 @@ const MockDetectionService = {
       const checks = await Promise.allSettled([
         _checkProviderStatus(),
         _checkLocationAccuracy(),
-        _checkInstallationSources(), // Android specific
+        _checkInstallationSources(),
       ]);
 
-      // If any check returns true, consider it mocked
       return checks.some(result => 
         result.status === 'fulfilled' && result.value === true
       );

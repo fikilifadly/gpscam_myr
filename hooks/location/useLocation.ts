@@ -83,7 +83,6 @@ const useLocation = (): UseLocation => {
     }
   };
 
-  // Check permissions on mount
   useEffect(() => {
     const initialize = async () => {
       await Promise.all([

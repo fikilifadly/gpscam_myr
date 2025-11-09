@@ -30,7 +30,6 @@ const PhotoDetails: React.FC = () => {
    * Handle share photo
    */
   const handleSharePhoto = (): void => {
-    // Implement share functionality
     Alert.alert('Share', 'Share functionality to be implemented');
   };
 
