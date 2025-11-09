@@ -1,8 +1,10 @@
+// components/CameraComponent.tsx
 import React from 'react';
-import { View, TouchableOpacity, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { Camera as ExpoCamera } from 'expo-camera';
 import useCamera from './useCamera';
 import useLocation from '@/hooks/location/useLocation';
+import PhotoPreviewModal from '@/components/PreviewModal/PreviewModal.component';
 import styles from './Camera.component.styles';
 
 /**
@@ -16,9 +18,15 @@ const CameraComponent: React.FC = () => {
     isCapturing,
     uploadLoading,
     isGrantingPermission,
-    handleCapturePhoto,
+    previewVisible,
+    previewPhotoUri,
+    previewPhotoData,
+    debouncedCapture,
     toggleCameraType,
     grantPermission,
+    retakePhoto,
+    processUpload,
+    hidePreview,
   } = useCamera();
 
   const { 
@@ -29,9 +37,10 @@ const CameraComponent: React.FC = () => {
   } = useLocation();
 
   const hasAllPermissions = hasPermission && hasLocationPermission;
-
   const isLoading = isCheckingLocation || isGrantingPermission;
   const isButtonDisabled = isCapturing || uploadLoading || isLoading || !hasAllPermissions;
+
+  // ... your existing permission screens remain the same
 
   if (hasPermission === null || isLoading) {
     return (
@@ -120,7 +129,7 @@ const CameraComponent: React.FC = () => {
               styles.captureButton, 
               isButtonDisabled && styles.captureButtonDisabled
             ]}
-            onPress={handleCapturePhoto}
+            onPress={debouncedCapture}
             disabled={isButtonDisabled}
           >
             {isCapturing || uploadLoading ? (
@@ -157,6 +166,17 @@ const CameraComponent: React.FC = () => {
           </View>
         )}
       </ExpoCamera>
+
+      {/* Photo Preview Modal - MAKE SURE THIS IS INCLUDED! */}
+      <PhotoPreviewModal
+        visible={previewVisible}
+        photoUri={previewPhotoUri}
+        photoData={previewPhotoData}
+        isUploading={uploadLoading}
+        onRetake={retakePhoto}
+        onUpload={processUpload}
+        onClose={hidePreview}
+      />
     </View>
   );
 };

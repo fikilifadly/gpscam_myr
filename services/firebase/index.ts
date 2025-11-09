@@ -5,33 +5,108 @@ import {
   query, 
   orderBy, 
   doc, 
-  getDoc, 
   deleteDoc,
-  serverTimestamp 
+  serverTimestamp,
+  onSnapshot, 
+  Unsubscribe 
 } from 'firebase/firestore';
 import { db } from '@/configs/firebase';
-import { PhotoData, AsyncFunction, AsyncVoidFunction, PromiseVoid } from '@/types/index.';
+import { PhotoData, AsyncFunction, AsyncVoidFunction } from '@/types/index.';
+
+let unsubscribe: Unsubscribe | null = null;
+let listeners: ((photos: PhotoData[]) => void)[] = [];
 
 /**
- * Get photos collection reference from Firestore
- * 
- * @returns {dbAny} Firestore collection reference for photos
- * @private
+ * Set up real-time listener for photos
  */
-const _getPhotosCollection = () => collection(db, 'photos');
+const setupRealTimeListener = (onPhotosUpdate: (photos: PhotoData[]) => void): void => {
+  console.log("🔄 Setting up real-time photo listener...");
+  
+  listeners.push(onPhotosUpdate);
+  
+  if (unsubscribe) {
+    console.log("📡 Real-time listener already exists");
+    return;
+  }
+
+  try {
+    const q = query(
+      collection(db, 'photos'),
+      orderBy('createdAt', 'desc')
+    );
+
+    unsubscribe = onSnapshot(q, 
+      (querySnapshot) => {
+        console.log("📸 Real-time update received! Photos count:", querySnapshot.size);
+        
+        const newPhotos = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as PhotoData));
+        
+        listeners.forEach(listener => listener(newPhotos));
+        
+        console.log(`🔄 Notified ${listeners.length} listeners with ${newPhotos.length} photos`);
+      },
+      (error) => {
+        console.error("❌ Error in real-time listener:", error);
+      }
+    );
+
+  } catch (error) {
+    console.error("❌ Error setting up real-time listener:", error);
+  }
+};
+
+/**
+ * Clean up real-time listener
+ */
+const cleanupRealTimeListener = (onPhotosUpdate: (photos: PhotoData[]) => void): void => {
+  listeners = listeners.filter(listener => listener !== onPhotosUpdate);
+  console.log(`🧹 Removed listener, ${listeners.length} remaining`);
+  
+  if (listeners.length === 0 && unsubscribe) {
+    console.log("🧹 No more listeners, cleaning up real-time listener");
+    unsubscribe();
+    unsubscribe = null;
+  }
+};
+
+/**
+ * Get all photos from Firestore ordered by creation date (newest first)
+ */
+const getAllPhotos: AsyncFunction<PhotoData[]> = async (): Promise<PhotoData[]> => {
+  try {
+    const q = query(
+      collection(db, 'photos'),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const photos = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as PhotoData));
+    
+    console.log(`✅ Loaded ${photos.length} photos from Firestore`);
+    return photos;
+  } catch (error) {
+    console.error('Error getting photos:', error);
+    throw error;
+  }
+};
 
 /**
  * Add new photo to Firestore
- * 
- * @param {Omit<PhotoData, 'id' | 'createdAt'>} photoData - Photo data without id and createdAt
- * @returns {Promise<string>} Promise that resolves to the created photo ID
  */
 const addPhoto = async (photoData: Omit<PhotoData, 'id' | 'createdAt'>): Promise<string> => {
   try {
-    const docRef = await addDoc(_getPhotosCollection(), {
+    const docRef = await addDoc(collection(db, 'photos'), {
       ...photoData,
       createdAt: serverTimestamp(),
     });
+    
+    console.log("✅ New photo added with ID:", docRef.id);
     return docRef.id;
   } catch (error) {
     console.error('Error adding photo:', error);
@@ -40,59 +115,13 @@ const addPhoto = async (photoData: Omit<PhotoData, 'id' | 'createdAt'>): Promise
 };
 
 /**
- * Get all photos from Firestore ordered by creation date (newest first)
- * 
- * @returns {AsyncFunction<PhotoData[]>} Async function that returns array of photos
- */
-const getAllPhotos: AsyncFunction<PhotoData[]> = async (): Promise<PhotoData[]> => {
-  try {
-    const q = query(
-      _getPhotosCollection(),
-      orderBy('createdAt', 'desc')
-    );
-    
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as PhotoData));
-  } catch (error) {
-    console.error('Error getting photos:', error);
-    throw error;
-  }
-};
-
-/**
- * Get single photo by ID from Firestore
- * 
- * @param {string} photoId - ID of the photo to retrieve
- * @returns {Promise<PhotoData | null>} Promise that resolves to photo data or null if not found
- */
-const getPhotoById = async (photoId: string): Promise<PhotoData | null> => {
-  try {
-    const docRef = doc(db, 'photos', photoId);
-    const docSnap = await getDoc(docRef);
-    
-    return docSnap.exists() ? { 
-      id: docSnap.id, 
-      ...docSnap.data() 
-    } as PhotoData : null;
-  } catch (error) {
-    console.error('Error getting photo:', error);
-    throw error;
-  }
-};
-
-/**
  * Delete photo from Firestore by ID
- * 
- * @param {string} photoId - ID of the photo to delete
- * @returns {AsyncVoidFunction} Async function that deletes the photo
  */
 const deletePhoto = (photoId: string): AsyncVoidFunction => {
-  return async (): PromiseVoid => {
+  return async (): Promise<void> => {
     try {
       await deleteDoc(doc(db, 'photos', photoId));
+      console.log("✅ Photo deleted:", photoId);
     } catch (error) {
       console.error('Error deleting photo:', error);
       throw error;
@@ -100,28 +129,10 @@ const deletePhoto = (photoId: string): AsyncVoidFunction => {
   };
 };
 
-/**
- * Delete all photos from Firestore (cleanup function)
- * 
- * @returns {AsyncVoidFunction} Async function that deletes all photos
- */
-const deleteAllPhotos: AsyncVoidFunction = async () => {
-  try {
-    const photos = await getAllPhotos();
-    const deletePromises = photos.map(photo => 
-      deleteDoc(doc(db, 'photos', photo.id!))
-    );
-    await Promise.all(deletePromises);
-  } catch (error) {
-    console.error('Error deleting all photos:', error);
-    throw error;
-  }
-};
-
 export default {
-  addPhoto,
   getAllPhotos,
-  getPhotoById,
+  addPhoto,
   deletePhoto,
-  deleteAllPhotos
+  setupRealTimeListener,
+  cleanupRealTimeListener,
 };

@@ -1,3 +1,4 @@
+// hooks/useCamera.ts
 import { useState, useRef, useEffect } from "react";
 import { Alert } from "react-native";
 import { Camera as ExpoCamera, CameraType } from "expo-camera";
@@ -15,7 +16,7 @@ const _processAndUploadPhoto = async (
   imageUri: string,
   photoData: Omit<PhotoData, "id" | "createdAt">,
   uploadPhoto: (photoData: Omit<PhotoData, "id" | "createdAt">) => Promise<string>
-): PromiseVoid => {
+): Promise<string> => {
   try {
     console.log("Processing image for upload...");
     const compressedUri = await cameraService.compressImage(imageUri);
@@ -46,60 +47,93 @@ const _handleCapturePhoto = (
   setIsCapturing: (capturing: boolean) => void,
   showPreview: (uri: string, data: Omit<PhotoData, "id" | "createdAt">) => void
 ): AsyncVoidFunction => {
-  return async (): PromiseVoid => {
+  return async (): Promise<void> => {
     if (!cameraRef.current || isCapturing) {
       console.log("Camera not ready or already capturing");
       return;
     }
 
-    console.log("Starting photo capture...");
+    console.log("=== STARTING PHOTO CAPTURE ===");
     setIsCapturing(true);
 
+    // Add a flag to prevent multiple simultaneous captures
+    let captureCompleted = false;
+
     try {
-      const capturePromise = cameraRef.current.takePictureAsync({
+      console.log("1. Capturing photo...");
+      const photo = await cameraRef.current.takePictureAsync({
         quality: 0.8,
         base64: false,
       });
+      console.log("Photo captured successfully:", photo.uri);
 
-      const captureTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Photo capture timeout")), 10000));
-
-      const photo = (await Promise.race([capturePromise, captureTimeout])) as any;
-      console.log("Photo captured:", photo.uri);
-
-      if (photo.uri) {
-        console.log("Getting location data for preview...");
-        const locationData = await locationService.getEnhancedLocation();
-        const isMocked = await MockDetectionService.checkMockLocation();
-
-        const photoData: Omit<PhotoData, "id" | "createdAt"> = {
-          imageBase64: "", 
-          isMockLocation: isMocked,
-          location: {
-            latitude: locationData.latitude,
-            longitude: locationData.longitude,
-            altitude: locationData.altitude,
-            compassHeading: locationData.compassHeading,
-            magneticField: locationData.magneticField,
-            weather: locationData.weather,
-          },
-          exifData: {
-            customGeoTag: `X-DataGeoTag: ${locationData.latitude}, ${locationData.longitude}`,
-          },
-        };
-
-        showPreview(photo.uri, photoData);
+      if (!photo.uri) {
+        throw new Error("No photo URI returned from camera");
       }
+
+      console.log("2. Getting enhanced location...");
+      
+      // Use a single location call with timeout
+      const locationPromise = locationService.getEnhancedLocation();
+      const locationTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Location service timeout during photo capture")), 20000)
+      );
+
+      const locationData = await Promise.race([locationPromise, locationTimeout]);
+      console.log("Enhanced location obtained:", locationData);
+
+      console.log("3. Getting mock detection...");
+      const isMocked = await MockDetectionService.checkMockLocation();
+      console.log("Mock detection result:", isMocked);
+
+      const photoData: Omit<PhotoData, "id" | "createdAt"> = {
+        imageBase64: "", 
+        isMockLocation: isMocked,
+        location: {
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+          altitude: locationData.altitude,
+          compassHeading: locationData.compassHeading,
+          magneticField: locationData.magneticField,
+          weather: locationData.weather,
+        },
+        exifData: {
+          customGeoTag: `X-DataGeoTag: ${locationData.latitude}, ${locationData.longitude}`,
+        },
+      };
+
+      console.log("4. Showing preview...");
+      captureCompleted = true;
+      showPreview(photo.uri, photoData);
+      console.log("=== PHOTO CAPTURE COMPLETED ===");
+
     } catch (error: any) {
-      console.error("Error capturing photo:", error);
+      console.error("=== PHOTO CAPTURE FAILED ===", error);
+      
+      // Only reset state if capture wasn't completed
+      if (!captureCompleted) {
+        setIsCapturing(false);
+      }
 
       if (error.message.includes("timeout")) {
-        Alert.alert("Timeout", error.message);
+        Alert.alert(
+          "Location Timeout", 
+          "GPS signal took too long. Please ensure:\n• You're in an area with good GPS reception\n• Location services are enabled\n• Try moving to an open area",
+          [{ text: "OK" }]
+        );
+      } else if (error.message.includes("permission")) {
+        Alert.alert(
+          "Permission Required",
+          "Location permission is needed to tag your photos.",
+          [{ text: "OK" }]
+        );
       } else {
-        Alert.alert("Error", "Failed to capture photo");
+        Alert.alert(
+          "Capture Failed",
+          `Unable to complete photo capture: ${error.message}`,
+          [{ text: "OK" }]
+        );
       }
-    } finally {
-      console.log("Photo capture process completed");
-      setIsCapturing(false);
     }
   };
 };
@@ -131,7 +165,7 @@ const _states = (): States => {
 };
 
 /**
- * Handle capture photo - FIXED: Accept showPreview parameter
+ * Handle capture photo
  */
 const _capturePhotoHandler = (
   states: States,
@@ -155,7 +189,7 @@ const _toggleCameraType = ({ cameraType, setCameraType }: States): void => {
 /**
  * Grant camera permission
  */
-const _grantPermission = async ({ setHasPermission, setIsGrantingPermission }: States): PromiseVoid => {
+const _grantPermission = async ({ setHasPermission, setIsGrantingPermission }: States): Promise<void> => {
   try {
     setIsGrantingPermission(true);
     const permission = await cameraService.requestCameraPermissions();
@@ -208,14 +242,30 @@ const useCamera = (): UseCamera => {
   const [previewVisible, setPreviewVisible] = useState<boolean>(false);
   const [previewPhotoUri, setPreviewPhotoUri] = useState<string>("");
   const [previewPhotoData, setPreviewPhotoData] = useState<Omit<PhotoData, "id" | "createdAt"> | null>(null);
+  const [lastCaptureTime, setLastCaptureTime] = useState<number>(0);
 
+  // Fixed showPreview function
   const showPreview = (uri: string, data: Omit<PhotoData, "id" | "createdAt">) => {
+    console.log("🟢 SHOW PREVIEW CALLED with:", {
+      uri: uri ? `URI exists (${uri.substring(0, 50)}...)` : 'NO URI',
+      data: data ? 'Data exists' : 'NO DATA',
+      hasLocation: !!data?.location,
+      previewVisible: previewVisible
+    });
+    
+    // Reset capturing state BEFORE setting preview data
+    states.setIsCapturing(false);
+    
+    // Then set preview data
     setPreviewPhotoUri(uri);
     setPreviewPhotoData(data);
     setPreviewVisible(true);
+    
+    console.log("🟢 Preview state updated, should be visible now");
   };
 
   const hidePreview = () => {
+    console.log("Hiding preview modal");
     setPreviewVisible(false);
     setPreviewPhotoUri("");
     setPreviewPhotoData(null);
@@ -223,18 +273,13 @@ const useCamera = (): UseCamera => {
 
   const retakePhoto = () => {
     console.log("Retaking photo, resetting states...");
-
     states.setIsCapturing(false);
-
     hidePreview();
-
-    setTimeout(() => {
-      console.log("Camera should be ready for retake now");
-    }, 100);
   };
 
-  const processUpload = async (photoData: Omit<PhotoData, "id" | "createdAt">) => {
+  const processUpload = async (photoData: Omit<PhotoData, "id" | "createdAt">): Promise<void> => {
     try {
+      console.log("Starting upload process...");
       const photoId = await _processAndUploadPhoto(previewPhotoUri, photoData, states.uploadPhoto);
       hidePreview();
       Alert.alert("Success", "Photo uploaded successfully!");
@@ -245,14 +290,34 @@ const useCamera = (): UseCamera => {
     }
   };
 
+  // Fixed debounced capture function
+  const debouncedCapture = (): void => {
+    const now = Date.now();
+    console.log("Debounced capture called, last capture:", now - lastCaptureTime);
+
+    if (now - lastCaptureTime < 3000) {
+      console.log("Capture throttled - too soon after previous capture");
+      return;
+    }
+    
+    setLastCaptureTime(now);
+    _capturePhotoHandler(states, showPreview)();
+  };
+
   _useEffectPermission(states);
 
   return {
-    ...states,
+    cameraRef: states.cameraRef,
+    hasPermission: states.hasPermission,
+    cameraType: states.cameraType,
+    isCapturing: states.isCapturing,
+    uploadLoading: states.uploadLoading,
+    isGrantingPermission: states.isGrantingPermission,
     previewVisible,
     previewPhotoUri,
     previewPhotoData,
-    handleCapturePhoto: _capturePhotoHandler(states, showPreview),
+    handleCapturePhoto: () => _capturePhotoHandler(states, showPreview)(),
+    debouncedCapture,
     toggleCameraType: () => _toggleCameraType(states),
     grantPermission: () => _grantPermission(states),
     retakePhoto,

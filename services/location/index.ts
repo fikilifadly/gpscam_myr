@@ -1,3 +1,4 @@
+// services/location/index.ts
 import * as Location from "expo-location";
 import { Alert } from "react-native";
 import { Location as LocationType, Weather } from "@/types/index.";
@@ -10,58 +11,73 @@ const {
 
 /**
  * Request location permissions
- *
- * @returns {Promise<boolean>} Promise that resolves to true if permissions granted
  */
 const requestLocationPermissions = async (): Promise<boolean> => {
   try {
     const { status } = await Location.requestForegroundPermissionsAsync();
-
     return status === GRANTED;
   } catch (error) {
     console.error("Error requesting location permissions:", error);
     Alert.alert("Error", "Failed to access location permissions");
-
     return false;
   }
 };
 
 /**
- * Get current location with high accuracy
- *
- * @returns {Promise<Pick<LocationType, 'latitude' | 'longitude' | 'altitude'>>} Promise that resolves to location data
+ * Get current location with high accuracy and timeout
  */
 const getCurrentLocation = async (): Promise<Pick<LocationType, "latitude" | "longitude" | "altitude">> => {
   try {
-    const location = await Location.getCurrentPositionAsync({
+    console.log("Getting current location...");
+    
+    const locationPromise = Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.BestForNavigation,
     });
 
-    const altitude = location.coords.altitude !== null && location.coords.altitude !== undefined ? parseFloat(location.coords.altitude.toFixed(2)) : null;
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Location timeout - taking too long to get GPS signal")), 15000)
+    );
+
+    const location = await Promise.race([locationPromise, timeoutPromise]) as any;
+    console.log("Location obtained successfully");
+
+    const altitude = location.coords.altitude !== null && location.coords.altitude !== undefined 
+      ? parseFloat(location.coords.altitude.toFixed(2)) 
+      : null;
 
     return {
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
       altitude
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error getting location:", error);
-
-    throw new Error("Failed to get current location");
+    
+    if (error.message.includes("timeout")) {
+      throw new Error("GPS signal timeout. Please ensure location services are enabled and try again.");
+    } else {
+      throw new Error("Failed to get current location");
+    }
   }
 };
 
 /**
- * Check if location is mocked/spoofed
- *
- * @returns {Promise<boolean>} Promise that resolves to true if location is mocked
+ * Check if location is mocked/spoofed with timeout
  */
 const checkMockLocation = async (): Promise<boolean> => {
   try {
-    const providerStatus = await Location.getProviderStatusAsync();
+    console.log("Checking mock location...");
+    
+    const providerPromise = Location.getProviderStatusAsync();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Mock detection timeout")), 5000)
+    );
 
+    const providerStatus = await Promise.race([providerPromise, timeoutPromise]) as any;
+    
     const isMocked = !providerStatus.locationServicesEnabled || !providerStatus.gpsAvailable;
-
+    console.log("Mock detection result:", isMocked);
+    
     return isMocked;
   } catch (error) {
     console.error("Error checking mock location:", error);
@@ -71,15 +87,11 @@ const checkMockLocation = async (): Promise<boolean> => {
 
 /**
  * Map Open-Meteo weather codes to human-readable conditions
- *
- * @param {number} weatherCode - Open-Meteo weather code
- * @returns {string} Human-readable weather condition
- * @private
  */
 const _mapWeatherCode = (weatherCode: number): string => {
   const weatherCodes: { [key: number]: string } = {
     0: "Clear Sky",
-    1: "Mainly Clear",
+    1: "Mainly Clear", 
     2: "Partly Cloudy",
     3: "Overcast",
     45: "Foggy",
@@ -87,13 +99,13 @@ const _mapWeatherCode = (weatherCode: number): string => {
     51: "Light Drizzle",
     53: "Moderate Drizzle",
     55: "Dense Drizzle",
-    56: "Light Freezing Drizzle",
+    56: "Light Freezing Drizzle", 
     57: "Dense Freezing Drizzle",
     61: "Slight Rain",
     63: "Moderate Rain",
     65: "Heavy Rain",
     66: "Light Freezing Rain",
-    67: "Heavy Freezing Rain",
+    67: "Heavy Freezing Rain", 
     71: "Slight Snow",
     73: "Moderate Snow",
     75: "Heavy Snow",
@@ -101,7 +113,7 @@ const _mapWeatherCode = (weatherCode: number): string => {
     80: "Slight Rain Showers",
     81: "Moderate Rain Showers",
     82: "Violent Rain Showers",
-    85: "Slight Snow Showers",
+    85: "Slight Snow Showers", 
     86: "Heavy Snow Showers",
     95: "Thunderstorm",
     96: "Thunderstorm with Hail",
@@ -112,28 +124,30 @@ const _mapWeatherCode = (weatherCode: number): string => {
 };
 
 /**
- * Get weather data using Open-Meteo (free, no API key)
- *
- * @param {number} latitude - Latitude coordinate
- * @param {number} longitude - Longitude coordinate
- * @returns {Promise<Weather | null>} Promise that resolves to weather data or null
+ * Get weather data with timeout
  */
 const getWeatherData = async (latitude: number, longitude: number): Promise<Weather | null> => {
   try {
-    const response = await fetch(
+    console.log("Getting weather data...");
+    
+    const weatherPromise = fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`
     );
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Weather API timeout")), 10000)
+    );
+
+    const response = await Promise.race([weatherPromise, timeoutPromise]) as any;
 
     if (!response.ok) {
       throw new Error(`Weather API request failed: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Weather API response:", JSON.stringify(data, null, 2));
+    console.log("Weather data obtained successfully");
 
     if (!data.current) {
-      console.log("No current weather data available");
-
       return null;
     }
 
@@ -150,31 +164,27 @@ const getWeatherData = async (latitude: number, longitude: number): Promise<Weat
 };
 
 /**
- * Get compass heading (placeholder)
- *
- * @returns {Promise<number | null>} Promise that resolves to compass heading in degrees
+ * Get compass heading with timeout
  */
 const getCompassHeading = async (): Promise<number | null> => {
   try {
+    console.log("Getting compass heading...");
+    
     const isAvailable = await Magnetometer.isAvailableAsync();
-    console.log("Magnetometer available:", isAvailable);
-
     if (!isAvailable) {
+      console.log("Magnetometer not available");
       return null;
     }
 
-    return new Promise((resolve) => {
+    const headingPromise = new Promise((resolve) => {
       let headingCalculated = false;
 
       const subscription = Magnetometer.addListener((magnetometerData) => {
         const { x, y } = magnetometerData;
-
         let heading = Math.atan2(y, x) * (180 / Math.PI);
         if (heading < 0) heading += 360;
 
         const roundedHeading = Math.round(heading);
-
-        console.log("Raw magnetometer:", { x, y, heading: roundedHeading });
 
         if (!headingCalculated) {
           headingCalculated = true;
@@ -184,15 +194,16 @@ const getCompassHeading = async (): Promise<number | null> => {
       });
 
       Magnetometer.setUpdateInterval(100);
-
-      setTimeout(() => {
-        if (!headingCalculated) {
-          subscription.remove();
-          console.log("Compass heading timeout");
-          resolve(null);
-        }
-      }, 5000);
     });
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Compass timeout")), 5000)
+    );
+
+    const heading = await Promise.race([headingPromise, timeoutPromise]) as number;
+    console.log("Compass heading obtained:", heading);
+    return heading;
+    
   } catch (error) {
     console.error("Error getting compass heading:", error);
     return null;
@@ -200,23 +211,21 @@ const getCompassHeading = async (): Promise<number | null> => {
 };
 
 /**
- * getMagneticField
- *
- * @returns {Promise<number | null>} magneticField
+ * Get magnetic field with timeout
  */
 const getMagneticField = async (): Promise<number | null> => {
   try {
+    console.log("Getting magnetic field...");
+    
     const isAvailable = await Magnetometer.isAvailableAsync();
     if (!isAvailable) return null;
 
-    return new Promise((resolve) => {
+    const fieldPromise = new Promise((resolve) => {
       let fieldCalculated = false;
 
       const subscription = Magnetometer.addListener((data) => {
         const { x, y, z } = data;
         const strength = Math.sqrt(x * x + y * y + z * z);
-
-        console.log("Magnetic field raw:", { x, y, z, strength });
 
         if (!fieldCalculated) {
           fieldCalculated = true;
@@ -226,14 +235,16 @@ const getMagneticField = async (): Promise<number | null> => {
       });
 
       Magnetometer.setUpdateInterval(100);
-
-      setTimeout(() => {
-        if (!fieldCalculated) {
-          subscription.remove();
-          resolve(null);
-        }
-      }, 5000);
     });
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Magnetic field timeout")), 5000)
+    );
+
+    const field = await Promise.race([fieldPromise, timeoutPromise]) as number;
+    console.log("Magnetic field obtained:", field);
+    return field;
+    
   } catch (error) {
     console.error("Error getting magnetic field:", error);
     return null;
@@ -241,24 +252,30 @@ const getMagneticField = async (): Promise<number | null> => {
 };
 
 /**
- * Get complete location context with weather and mock detection
- *
- * @returns {Promise<LocationType>} Promise that resolves to complete location data
+ * Get complete location context with proper error handling and timeouts
  */
 const getEnhancedLocation = async (): Promise<LocationType> => {
+  console.log("=== STARTING ENHANCED LOCATION ===");
+  
   try {
+    // Get basic location first
+    console.log("1. Getting basic location...");
     const location = await getCurrentLocation();
-    console.log('Basic location obtained:', location);
+    console.log("Basic location obtained:", location);
 
+    // Get additional data in parallel with individual timeouts
+    console.log("2. Getting additional sensor data...");
+    
     const [weather, compassHeading, magneticField] = await Promise.allSettled([
       getWeatherData(location.latitude, location.longitude),
       getCompassHeading(),
       getMagneticField(),
-    ]).then(results => 
-      results.map(result => 
+    ]).then(results => {
+      console.log("All sensor data completed");
+      return results.map(result => 
         result.status === 'fulfilled' ? result.value : null
-      )
-    );
+      );
+    });
 
     const enhancedLocation = {
       latitude: location.latitude,
@@ -269,11 +286,17 @@ const getEnhancedLocation = async (): Promise<LocationType> => {
       weather: weather as Weather | null,
     };
 
-    console.log('Final enhanced location:', enhancedLocation);
+    console.log("=== ENHANCED LOCATION COMPLETED ===", enhancedLocation);
     return enhancedLocation;
-  } catch (error) {
-    console.error("Error getting enhanced location:", error);
-    throw error;
+    
+  } catch (error: any) {
+    console.error("=== ENHANCED LOCATION FAILED ===", error);
+    
+    if (error.message.includes("timeout")) {
+      throw new Error(`Location service timeout: ${error.message}`);
+    } else {
+      throw new Error(`Failed to get enhanced location: ${error.message}`);
+    }
   }
 };
 

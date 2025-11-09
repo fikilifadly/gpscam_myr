@@ -1,16 +1,19 @@
-import { PhotoData, AsyncVoidFunction, SetterState, SetterBoolean } from "@/types/index.";
+import { PhotoData } from "@/types/index.";
 
-export type States = {
-  photos: PhotoData[],
-  setPhotos: SetterState<PhotoData[]>,
-  loading: boolean,
-  setLoading: SetterBoolean<boolean>,
-  error: string | null,
-  setError: SetterState<string|null>,
+export interface States {
+  photos: PhotoData[];
+  loading: boolean;
+  error: string | null;
+  setPhotos: (photos: PhotoData[]) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
 }
 
-export interface UseFirebase extends States {
+export interface UseFirebase {
+  photos: PhotoData[];
+  loading: boolean;
+  error: string | null;
   loadPhotos: () => Promise<void>;
   uploadPhoto: (photoData: Omit<PhotoData, 'id' | 'createdAt'>) => Promise<string>;
-  deletePhoto: (photoId: string) => AsyncVoidFunction; 
-};
+  deletePhoto: (photoId: string) => () => Promise<void>;
+}

@@ -1,10 +1,32 @@
-import React, { useEffect } from 'react';
-import { View, FlatList, Image, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+// screens/ListScreen.tsx
+import React, { useEffect, useState } from 'react';
+import { View, FlatList, Image, Text, TouchableOpacity, Alert, StyleSheet, RefreshControl } from 'react-native';
 import useFirebase from '@/hooks/firebase/useFirebase';
 import WebViewMap from '@/components/Map/Map.component';
 
 const ListScreen: React.FC = () => {
-  const { photos, loadPhotos, loading, deletePhoto } = useFirebase();
+  const { photos, loadPhotos, loading, deletePhoto, lastUpdate } = useFirebase();
+  const [lastViewedCount, setLastViewedCount] = useState<number>(0);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  // Track when user views the gallery
+  useEffect(() => {
+    setLastViewedCount(photos.length);
+  }, []);
+
+  // Calculate new photos count
+  const newPhotosCount = photos.length - lastViewedCount;
+  const hasNewPhotos = newPhotosCount > 0;
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadPhotos();
+    setRefreshing(false);
+  };
+
+  const markAsViewed = () => {
+    setLastViewedCount(photos.length);
+  };
 
   const debugBase64Data = (photos: any[]) => {
     photos.forEach((photo, index) => {
@@ -41,11 +63,15 @@ const ListScreen: React.FC = () => {
     );
   };
 
-  const renderPhotoItem = ({ item }: { item: any }) => {
+  const renderPhotoItem = ({ item, index }: { item: any; index: number }) => {
+    const isNewPhoto = index < newPhotosCount;
+    
     if (!item.imageBase64) {
       console.log('No imageBase64 found for item:', item.id);
       return (
         <View style={styles.photoCard}>
+          {isNewPhoto && <View style={styles.newBadge}><Text style={styles.newBadgeText}>NEW</Text></View>}
+          
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>Image not available</Text>
           </View>
@@ -78,6 +104,8 @@ const ListScreen: React.FC = () => {
 
     return (
       <View style={styles.photoCard}>
+        {isNewPhoto && <View style={styles.newBadge}><Text style={styles.newBadgeText}>NEW</Text></View>}
+        
         <Image 
           source={{ uri: imageSource }} 
           style={styles.photoImage}
@@ -88,7 +116,7 @@ const ListScreen: React.FC = () => {
           onLoad={() => console.log('Image loaded successfully for item:', item.id)}
         />
         
-        {/* Map Section - FIXED: Using WebViewMap correctly */}
+        {/* Map Section */}
         {item.location?.latitude && item.location?.longitude && (
           <WebViewMap
             latitude={item.location.latitude}
@@ -143,9 +171,15 @@ const ListScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+     <View style={styles.header}>
       <Text style={styles.title}>Photo Gallery</Text>
+      <View style={styles.statusContainer}>
+        {loading && <Text style={styles.statusText}>🔄 Loading...</Text>}
+        <Text style={styles.countText}>{photos.length} photos</Text>
+      </View>
+    </View>
       
-      {loading ? (
+      {loading && !refreshing ? (
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading photos...</Text>
         </View>
@@ -161,15 +195,27 @@ const ListScreen: React.FC = () => {
           renderItem={renderPhotoItem}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
-          onRefresh={loadPhotos}
-          refreshing={loading}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={['#007AFF']}
+              tintColor="#007AFF"
+            />
+          }
+          onScroll={() => {
+            // Auto-mark as viewed when user scrolls
+            if (hasNewPhotos) {
+              markAsViewed();
+            }
+          }}
         />
       )}
     </View>
   );
 };
 
-// Your existing styles remain the same...
+// Add these new styles:
 const styles = StyleSheet.create({
   compassText: {
     color: '#666',
@@ -181,6 +227,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  countText: {
+  color: '#666',
+  fontSize: 12,
+},
   deleteButton: {
     alignSelf: 'flex-start',
     backgroundColor: '#ff3b30',
@@ -199,32 +249,38 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  emptySubText: {
+emptySubText: {
     color: '#999',
     fontSize: 14,
     textAlign: 'center',
   },
-  emptyText: {
+emptyText: {
     color: '#666',
     fontSize: 18,
     marginBottom: 8,
   },
-  errorContainer: {
+errorContainer: {
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
     height: 250,
     justifyContent: 'center',
     width: '100%',
   },
-  errorText: {
-    color: '#666',
-    fontSize: 16,
-  },
+errorText: {
+  color: '#FF3B30',
+  fontSize: 12,
+},
   geoTagText: {
     color: '#888',
     fontFamily: 'monospace',
     fontSize: 10,
     marginBottom: 8,
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   listContent: {
     paddingBottom: 16,
@@ -254,6 +310,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 4,
   },
+  newBadge: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    zIndex: 10,
+  },
+  newBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  newPhotosIndicator: {
+    backgroundColor: '#007AFF',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  newPhotosText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   photoCard: {
     backgroundColor: 'white',
     borderRadius: 12,
@@ -272,6 +354,13 @@ const styles = StyleSheet.create({
   photoInfo: {
     padding: 16,
   },
+  statusContainer: {
+  alignItems: 'flex-end',
+},
+  statusText: {
+  color: '#007AFF',
+  fontSize: 12,
+},
   timestampText: {
     color: '#666',
     fontSize: 12,
@@ -281,8 +370,6 @@ const styles = StyleSheet.create({
     color: '#333',
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
   },
   weatherText: {
     color: '#666',
